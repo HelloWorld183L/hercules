@@ -2,32 +2,28 @@
 Hercules - A Discord bot powered by Strands Agents
 """
 
+import logging
 import os
-import asyncio
-from discord import Client, DMChannel, Intents, Message
+from discord import app_commands
 import discord
 from dotenv import load_dotenv
-from strands import Agent
+from strands import Agent, AgentSkills
 from strands.models.openai import OpenAIModel
-from strands.tools import tool
 from strands_tools import calculator, current_time
 from strands_tools.tavily import tavily_search
 from strands_tools import mem0_memory
 import warnings
-import hashlib
 
-from hercules.steering import WorkoutProgramSteeringHandler
+from hercules.client import HerculesClient
 
+# DeprecationWarning interferes with agent outputs
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="mem0_memory")
 
 load_dotenv()
 
-STRANDS_MODEL_ID = os.getenv(
-    "STRANDS_MODEL_ID", "gpt-4o"
-)
+STRANDS_MODEL_ID = os.getenv("STRANDS_MODEL_ID", "gpt-4o")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-DISCORD_RESPONSE_LIMIT = 2000
+DEFAULT_WORKOUT_PROGRAM_NAME = "workout_program.md"
 
 model = OpenAIModel(client_args={"api_key": OPENAI_API_KEY}, model_id=STRANDS_MODEL_ID)
 
@@ -35,68 +31,24 @@ model = OpenAIModel(client_args={"api_key": OPENAI_API_KEY}, model_id=STRANDS_MO
 with open(os.path.join(os.path.dirname(__file__), "sop.md"), "r") as f:
     SYSTEM_PROMPT = f.read()
 
-workout_program_steering_handler = WorkoutProgramSteeringHandler()
+plugin = AgentSkills(skills=os.path.join(os.path.dirname(__file__), "skills"))
 
 # Create the Strands Agent with the SOP
 agent = Agent(
     model=model,
     tools=[calculator, current_time, tavily_search, mem0_memory],
-    plugins=[workout_program_steering_handler],
-    system_prompt=SYSTEM_PROMPT
+    plugins=[plugin],
+    system_prompt=SYSTEM_PROMPT,
 )
 
+handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
+client = HerculesClient(
+    agent, default_workout_program_name=DEFAULT_WORKOUT_PROGRAM_NAME
+)
+tree = app_commands.CommandTree(client)
 
-# Discord Client
-class HerculesClient(Client):
-    def __init__(self):
-        intents = Intents.default()
-        intents.message_content = True
-        super().__init__(intents=intents)
-
-    async def on_ready(self):
-        print(f"Hercules is online as {self.user}")
-
-    async def on_message(self, message: Message):
-        # Ignore messages from bots
-        if message.author.bot:
-            return
-
-        mentioned_or_dmed = self.user.mentioned_in(message) or isinstance(message.channel, DMChannel)
-        if mentioned_or_dmed:
-            try:
-                # Get the message content, removing the bot mention if present
-                user_input = message.content.replace(f"<@{self.user.id}>", "").strip()
-
-                discord_user_id = str(message.author.id)
-
-                # For enhanced privacy we hash this since discord IDs can link back to users
-                hashed_user_id = hashlib.sha256(discord_user_id.encode()).hexdigest()
-
-                context_input = f"""
-                [user_id: {hashed_user_id}], 
-                [user_input: {user_input}]
-                """
-
-                # Call the Strands Agent
-                result = agent(context_input)
-                if isinstance(result.message, dict) and "content" in result.message:
-                    response_text = result.message["content"][0]["text"]
-                else:
-                    response_text = str(result.message)
-
-                if len(response_text) > DISCORD_RESPONSE_LIMIT:
-                    temp_file = "hercules_response.txt"
-                    with open(temp_file, "w") as f:
-                        f.write(response_text)
-                    await message.reply(
-                        "Unfortunately, the response is too long for Discord. Here's a markdown file:",
-                        file=discord.File(temp_file, filename="workout_program.md")
-                    )
-                else:
-                    # Send the response
-                    await message.reply(response_text)
-            except Exception as e:
-                await message.reply(f"Hercules discord bot has failed. Please contact the developer for support.")
+# attach the tree to the client so the client can sync it in setup_hook
+client._tree = tree
 
 
 # Run the bot
@@ -105,8 +57,38 @@ def main():
     if not token:
         raise ValueError("DISCORD_BOT_TOKEN environment variable not set")
 
-    client = HerculesClient()
-    client.run(token)
+    client.run(token, log_handler=handler)
+
+
+@tree.command(
+    name="create_program", description="Create a workout program based on user input"
+)
+@app_commands.describe(
+    workout_split="Workout split that the user prefers (e.g. full body, push pull legs)"
+)
+async def create_program(interaction: discord.Interaction, workout_split: str):
+    """Create a workout program using the same logic as the message handler.
+
+    The slash command provides `workout_split` as extra context.
+    """
+    await interaction.response.defer()
+
+    try:
+        discord_user_id = str(interaction.user.id)
+        file_bytes = await client.agent_response(
+            f"Create a workout program using the {workout_split} split", discord_user_id
+        )
+
+        await interaction.followup.send(
+            "I have attached your training program. Please let me know if you have any questions.",
+            file=discord.File(file_bytes, filename=DEFAULT_WORKOUT_PROGRAM_NAME),
+        )
+
+    except Exception as e:
+        logging.exception(f"Error in /create_program: {e}")
+        await interaction.followup.send(
+            "Hercules failed to create the program. Contact the developer."
+        )
 
 
 if __name__ == "__main__":
