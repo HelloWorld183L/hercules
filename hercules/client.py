@@ -47,44 +47,46 @@ class HerculesClient(Client):
         mentioned_or_dmed = self.user.mentioned_in(message) or isinstance(
             message.channel, DMChannel
         )
-        if mentioned_or_dmed:
-            await message.channel.typing()  # Show typing indicator while processing
-            try:
-                # Get the message content, removing the bot mention if present
-                user_input = message.content.replace(f"<@{self.user.id}>", "").strip()
+        if not mentioned_or_dmed:
+            return
 
-                hashed_user_id = hashlib.sha256(message.author.id.encode()).hexdigest()
-                context_input = f"""
-                [user_id: {hashed_user_id}], 
-                [user_input: {user_input}]
-                """
+        await message.channel.typing()  # Show typing indicator while processing
+        try:
+            # Get the message content, removing the bot mention if present
+            user_input = message.content.replace(f"<@{self.user.id}>", "").strip()
 
-                result = await self._agent.invoke_async(context_input)
-                if isinstance(result.message, dict) and "content" in result.message:
-                    response_text = result.message["content"][0]["text"]
-                else:
-                    response_text = str(result.message)
+            hashed_user_id = hashlib.sha256(str(message.author.id).encode()).hexdigest()
+            context_input = f"""
+            [user_id: {hashed_user_id}], 
+            [user_input: {user_input}]
+            """
 
-                skill_metrics = result.metrics.tool_metrics["skills"]
-                user_wants_program = skill_metrics.tool.input['skill_name'] == 'program-creator'
+            result = await self._agent.invoke_async(context_input)
+            if isinstance(result.message, dict) and "content" in result.message:
+                response_text = result.message["content"][0]["text"]
+            else:
+                response_text = str(result.message)
 
-                if user_wants_program:
-                    file_bytes = io.BytesIO(response_text.encode("utf-8"))
-                    file_bytes.seek(0)
-                    await message.reply(
-                        """
-                        I have attached your training program. 
-                        Please let me know if you have any questions or need further assistance.
-                        """,
-                        file=discord.File(
-                            file_bytes, filename=self._default_workout_program_name
-                        ),
-                    )
-                else:
-                    await message.reply(response_text)
+            skill_metrics = result.metrics.tool_metrics["skills"]
+            user_wants_program = skill_metrics.tool['input']['skill_name'] == 'program-creator'
 
-            except Exception as e:
-                logging.exception(f"Error processing message: {e}")
+            if user_wants_program:
+                file_bytes = io.BytesIO(response_text.encode("utf-8"))
+                file_bytes.seek(0)
                 await message.reply(
-                    "Hercules discord bot has failed. Please contact the developer for support."
+                    """
+                    I have attached your training program. 
+                    Please let me know if you have any questions or need further assistance.
+                    """,
+                    file=discord.File(
+                        file_bytes, filename=self._default_workout_program_name
+                    ),
                 )
+            else:
+                await message.reply(response_text)
+
+        except Exception as e:
+            logging.exception(f"Error processing message: {e}")
+            await message.reply(
+                "Hercules discord bot has failed. Please contact the developer for support."
+            )

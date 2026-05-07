@@ -2,6 +2,8 @@
 Hercules - A Discord bot powered by Strands Agents
 """
 
+import hashlib
+import io
 import logging
 import os
 from discord import app_commands
@@ -41,7 +43,7 @@ agent = Agent(
     system_prompt=SYSTEM_PROMPT,
 )
 
-handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
+
 client = HerculesClient(
     agent, default_workout_program_name=DEFAULT_WORKOUT_PROGRAM_NAME
 )
@@ -57,8 +59,28 @@ def main():
     if not token:
         raise ValueError("DISCORD_BOT_TOKEN environment variable not set")
 
-    client.run(token, log_handler=handler)
+    setup_loggers()
+    client.run(token, log_handler=None)
 
+
+def setup_loggers():
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    formatter = logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
+
+    discord_logger = logging.getLogger("discord")
+    discord_logger.setLevel(logging.DEBUG)
+    discord_log_handler = logging.FileHandler(filename="logs/discord.log", encoding="utf-8", mode="w")
+    discord_log_handler.setFormatter(formatter)
+    discord_logger.addHandler(discord_log_handler)
+
+    strands_logger = logging.getLogger("strands")
+    strands_log_handler = logging.FileHandler(filename="logs/agent.log", encoding='utf-8', mode='w')
+    strands_log_handler.setFormatter(formatter)
+    strands_logger.addHandler(strands_log_handler)
+    strands_logger.setLevel(logging.DEBUG)
 
 @tree.command(
     name="create_program", description="Create a workout program based on user input"
@@ -72,12 +94,20 @@ async def create_program(interaction: discord.Interaction, workout_split: str):
     The slash command provides `workout_split` as extra context.
     """
     await interaction.response.defer()
-
+    
+    # TODO: De-duplicate this code
     try:
-        discord_user_id = str(interaction.user.id)
-        file_bytes = await client.agent_response(
-            f"Create a workout program using the {workout_split} split", discord_user_id
+        # Get the message content, removing the bot mention if present
+        hashed_user_id = hashlib.sha256(str(interaction.user.id).encode()).hexdigest()
+        result = await agent.invoke_async(
+            f"Create a workout program using the {workout_split} split for user id: {hashed_user_id}"
         )
+        if isinstance(result.message, dict) and "content" in result.message:
+            response_text = result.message["content"][0]["text"]
+        else:
+            response_text = str(result.message)
+        file_bytes = io.BytesIO(response_text.encode("utf-8"))
+        file_bytes.seek(0)
 
         await interaction.followup.send(
             "I have attached your training program. Please let me know if you have any questions.",
