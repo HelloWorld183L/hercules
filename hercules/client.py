@@ -2,42 +2,53 @@ import hashlib
 import io
 import logging
 import os
+from typing import Optional
 
-from discord import Client, DMChannel, Intents, Message
+from discord import DMChannel, Intents, Message
+from discord.ext import commands
 
 import discord
 from strands import Agent
 
+logger = logging.getLogger("hercules")
 
-class HerculesClient(Client):
+
+class HerculesBot(commands.Bot):
     def __init__(
-        self, agent: Agent, default_workout_program_name: str = "workout_program.md"
+        self,
+        *args,
+        agent: Agent,
+        default_workout_program_name: str = "workout_program.md",
+        dev_guild_id: Optional[int],
+        **kwargs,
     ):
         intents = Intents.default()
         intents.message_content = True
-        super().__init__(intents=intents)
-        self._agent = agent
+        super().__init__(*args, **kwargs, intents=intents, command_prefix="")
+        self.agent = agent
+        self._dev_guild_id = dev_guild_id
         self._default_workout_program_name = default_workout_program_name
 
     async def on_ready(self):
-        print(f"Hercules is online as {self.user}")
+        logger.info(f"Hercules is online as {self.user}")
 
     async def setup_hook(self) -> None:
-        # If a CommandTree was attached to the client by the module that created
-        # the client, sync it here so slash commands are registered before login completes.
-        try:
-            if hasattr(self, "_tree"):
-                # If a dev guild is set, sync only to that guild for immediate availability.
-                dev_guild = os.getenv("DISCORD_DEV_GUILD_ID")
-                if dev_guild:
-                    guild_obj = discord.Object(id=int(dev_guild))
-                    await self._tree.sync(guild=guild_obj)
-                    print(f"Command tree synced to dev guild {dev_guild}")
-                else:
-                    await self._tree.sync()
-                    print("Command tree synced (global)")
-        except Exception:
-            logging.exception("Failed to sync command tree")
+        # Cogs MUST be loaded before command trees are synced
+        for filename in os.listdir(os.path.join(os.path.dirname(__file__), "cogs")):
+            if filename.endswith(".py"):
+                await self.load_extension(name=f"hercules.cogs.{filename[:-3]}")
+
+        logger.info("Cogs loaded")
+
+        if self._dev_guild_id:
+            guild = discord.Object(id=self._dev_guild_id)
+            self.tree.copy_global_to(guild=guild)
+            await self.tree.sync(guild=guild)
+            logger.info("Command tree synced (local)")
+        else:
+            # Sync for global commands instead if there's no specific guild ID
+            await self.tree.sync()
+            logger.info("Command tree synced (global)")
 
     async def on_message(self, message: Message):
         # Ignore messages from bots
@@ -61,14 +72,16 @@ class HerculesClient(Client):
             [user_input: {user_input}]
             """
 
-            result = await self._agent.invoke_async(context_input)
+            result = await self.agent.invoke_async(context_input)
             if isinstance(result.message, dict) and "content" in result.message:
                 response_text = result.message["content"][0]["text"]
             else:
                 response_text = str(result.message)
 
             skill_metrics = result.metrics.tool_metrics["skills"]
-            user_wants_program = skill_metrics.tool['input']['skill_name'] == 'program-creator'
+            user_wants_program = (
+                skill_metrics.tool["input"]["skill_name"] == "program-creator"
+            )
 
             if user_wants_program:
                 file_bytes = io.BytesIO(response_text.encode("utf-8"))
@@ -86,7 +99,7 @@ class HerculesClient(Client):
                 await message.reply(response_text)
 
         except Exception as e:
-            logging.exception(f"Error processing message: {e}")
+            logger.exception(f"Error processing message: {e}")
             await message.reply(
                 "Hercules discord bot has failed. Please contact the developer for support."
             )
