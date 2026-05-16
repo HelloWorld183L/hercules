@@ -57,7 +57,14 @@ async def main():
     # Create the Strands Agent with the SOP
     agent = Agent(
         model=model,
-        tools=[calculator, current_time, file_read, tavily_search, mem0_memory, create_moving_avg_graph],
+        tools=[
+            calculator,
+            current_time,
+            file_read,
+            tavily_search,
+            mem0_memory,
+            create_moving_avg_graph,
+        ],
         plugins=[plugin],
         system_prompt=system_prompt,
     )

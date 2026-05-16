@@ -62,34 +62,48 @@ class HerculesCog(commands.Cog):
         metric_name="The name of the metric",
         metric_value="The value of the metric",
         unit="Unit of measurement for the metric if applicable (OPTIONAL)",
-        date_of_measurement="Datetime of the measurement. If left blank, today's date will be used (OPTIONAL)"
+        date_of_measurement="Datetime of the measurement. If left blank, today's date will be used (OPTIONAL)",
     )
     async def log_metric(
-        self, interaction: discord.Interaction, metric_name: str, metric_value: str, unit: Optional[str], date_of_measurement : Optional[str]
+        self,
+        interaction: discord.Interaction,
+        metric_name: str,
+        metric_value: str,
+        unit: Optional[str],
+        date_of_measurement: Optional[str],
     ):
         await interaction.response.defer()
 
         if not metric_name or not metric_value:
-            await interaction.response.send_message("Metric name and value are required.")
+            await interaction.response.send_message(
+                "Metric name and value are required."
+            )
             return
-        
+
         metric_name = metric_name.strip().lower()
         metric_value = metric_value.strip().lower()
         unit = unit.strip().lower() if unit else ""
 
-        hashed_user_id = hashlib.sha256(
-            str(interaction.user.id).encode()
-        ).hexdigest()
-        
-        measurement_date = datetime.now() if not date_of_measurement else dateparser.parse(date_of_measurement)
-        measurement_date_output = measurement_date.strftime('%Y-%m-%d %H:%M:%S')
+        hashed_user_id = hashlib.sha256(str(interaction.user.id).encode()).hexdigest()
+
+        measurement_date = (
+            datetime.now()
+            if not date_of_measurement
+            else dateparser.parse(date_of_measurement)
+        )
+        measurement_date_output = measurement_date.strftime("%Y-%m-%d %H:%M:%S")
 
         try:
-            self.bot.agent.tool.mem0_memory(action="store", content=f"{metric_name}: {metric_value}{unit} on datetime: {measurement_date_output}", user_id=hashed_user_id)
+            self.bot.agent.tool.mem0_memory(
+                action="store",
+                content=f"{metric_name}: {metric_value}{unit} on datetime: {measurement_date_output}",
+                user_id=hashed_user_id,
+            )
         except Exception as e:
             print(e)
-        await interaction.followup.send(f"Logged user's {metric_name} at {metric_value} {unit} on {measurement_date_output}")
-
+        await interaction.followup.send(
+            f"Logged user's {metric_name} at {metric_value} {unit} on {measurement_date_output}"
+        )
 
 
 async def setup(bot):
