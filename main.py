@@ -8,12 +8,13 @@ import os
 from dotenv import load_dotenv
 from strands import Agent, AgentSkills
 from strands.models.openai import OpenAIModel
-from strands_tools import calculator, current_time
+from strands_tools import calculator, current_time, file_read
 from strands_tools.tavily import tavily_search
 from strands_tools import mem0_memory
 import warnings
 
 from hercules.client import HerculesBot
+from hercules.tools import create_moving_avg_graph
 
 # DeprecationWarning interferes with agent outputs
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="mem0_memory")
@@ -56,7 +57,7 @@ async def main():
     # Create the Strands Agent with the SOP
     agent = Agent(
         model=model,
-        tools=[calculator, current_time, tavily_search, mem0_memory],
+        tools=[calculator, current_time, file_read, tavily_search, mem0_memory, create_moving_avg_graph],
         plugins=[plugin],
         system_prompt=system_prompt,
     )
@@ -97,7 +98,7 @@ def setup_loggers():
         filename="logs/hercules.log", encoding="utf-8", mode="w"
     )
     hercules_log_handler.setFormatter(formatter)
-    hercules_logger.addHandler(strands_log_handler)
+    hercules_logger.addHandler(hercules_log_handler)
     hercules_logger.setLevel(logging.DEBUG)
 
 
