@@ -1,7 +1,12 @@
+import base64
+from datetime import datetime
 import hashlib
 import io
+import atexit
 import logging
 import os
+import shutil
+import tempfile
 from typing import Optional
 
 from discord import DMChannel, Intents, Message
@@ -9,6 +14,8 @@ from discord.ext import commands
 
 import discord
 from strands import Agent
+
+from hercules.mime_types import MIME_TYPES
 
 logger = logging.getLogger("hercules")
 
@@ -28,6 +35,13 @@ class HerculesBot(commands.Bot):
         self.agent = agent
         self._dev_guild_id = dev_guild_id
         self._default_workout_program_name = default_workout_program_name
+        # Persistent storage for uploaded files that should survive the
+        # lifecycle of a single message handler. These files will be
+        # cleaned up when the process exits.
+        self.persistent_files_dir = tempfile.mkdtemp(prefix="hercules_persistent_")
+        self._persistent_files = set()
+        # Ensure the persistent directory is removed on process exit
+        atexit.register(shutil.rmtree, self.persistent_files_dir, ignore_errors=True)
 
     async def on_ready(self):
         logger.info(f"Hercules is online as {self.user}")
@@ -62,18 +76,34 @@ class HerculesBot(commands.Bot):
             return
 
         await message.channel.typing()  # Show typing indicator while processing
+
         try:
+            agent_work_dir = tempfile.mkdtemp(prefix='hercules_agent_run_')
             # Get the message content, removing the bot mention if present
             user_input = message.content.replace(f"<@{self.user.id}>", "").strip()
 
             hashed_user_id = hashlib.sha256(str(message.author.id).encode()).hexdigest()
-            if message.attachments:
-                result = self.agent.tool.file_read(path="", mode="view")
-
             context_input = f"""
             [user_id: {hashed_user_id}], 
             [user_input: {user_input}]
             """
+            if message.attachments:
+                logger.info(message.attachments[0].content_type)
+                file_extension = MIME_TYPES.get(message.attachments[0].content_type, "ignore")
+                if not file_extension == "ignore":
+                    attachment_contents = await message.attachments[0].read()
+                    time_of_upload = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    # Store the attachment in the bot-level persistent directory
+                    store_filename = f"{time_of_upload}_{hashed_user_id}_attachment.{file_extension}"
+                    store_temp_file_path = os.path.join(self.persistent_files_dir, store_filename)
+                    logger.info(f"Storing attachment to {store_temp_file_path}")
+                    with open(store_temp_file_path, "wb") as f:
+                        f.write(attachment_contents)
+                        
+                    # Track this file for possible later cleanup or introspection
+                    self._persistent_files.add(store_temp_file_path)
+
+                    context_input += f", [file_extension: {file_extension}], [file_path: {store_temp_file_path}]"
 
             result = await self.agent.invoke_async(context_input)
             if isinstance(result.message, dict) and "content" in result.message:
@@ -131,3 +161,8 @@ class HerculesBot(commands.Bot):
             await message.reply(
                 "Hercules discord bot has failed. Please contact the developer for support."
             )
+
+        finally:
+            # Do NOT remove persistent files here; they live for the lifetime
+            # of the bot process so the agent can reference them across messages.
+            shutil.rmtree(agent_work_dir, ignore_errors=True)

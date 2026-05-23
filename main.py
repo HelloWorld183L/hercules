@@ -9,12 +9,12 @@ from dotenv import load_dotenv
 from strands import Agent, AgentSkills
 from strands.models.openai import OpenAIModel
 from strands_tools import calculator, current_time, file_read
-from strands_tools.tavily import tavily_search
+from strands_tools.tavily import tavily_extract
 from strands_tools import mem0_memory
 import warnings
 
 from hercules.client import HerculesBot
-from hercules.tools import create_moving_avg_graph
+from hercules.tools import create_moving_avg_graph, describe_excel_workbook, query_sheet
 
 # DeprecationWarning interferes with agent outputs
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="mem0_memory")
@@ -60,10 +60,11 @@ async def main():
         tools=[
             calculator,
             current_time,
-            file_read,
-            tavily_search,
             mem0_memory,
             create_moving_avg_graph,
+            describe_excel_workbook,
+            query_sheet,
+            tavily_extract,
         ],
         plugins=[plugin],
         system_prompt=system_prompt,
