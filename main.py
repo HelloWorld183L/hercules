@@ -14,7 +14,7 @@ from strands_tools import mem0_memory
 import warnings
 
 from hercules.client import HerculesBot
-from hercules.tools import create_moving_avg_graph, describe_excel_workbook, query_sheet
+from hercules.tools import create_moving_avg_graph, describe_excel_workbook, query_sheet, create_volume_graph
 
 # DeprecationWarning interferes with agent outputs
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="mem0_memory")
@@ -64,6 +64,7 @@ async def main():
             create_moving_avg_graph,
             describe_excel_workbook,
             query_sheet,
+            create_volume_graph,
             tavily_extract,
         ],
         plugins=[plugin],

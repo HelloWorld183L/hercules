@@ -43,6 +43,8 @@ class HerculesBot(commands.Bot):
         # Ensure the persistent directory is removed on process exit
         atexit.register(shutil.rmtree, self.persistent_files_dir, ignore_errors=True)
 
+        self._DISCORD_MSG_LIMIT = 2000
+
     async def on_ready(self):
         logger.info(f"Hercules is online as {self.user}")
 
@@ -116,8 +118,11 @@ class HerculesBot(commands.Bot):
                 skill_metrics
                 and skill_metrics.tool["input"]["skill_name"] == "program-creator"
             )
-            graph_metrics = result.metrics.tool_metrics.get("create_moving_avg_graph")
-            logger.info(f"Moving avg graph metrics: {graph_metrics}")
+            moving_avg_graph_metrics = result.metrics.tool_metrics.get("create_moving_avg_graph")
+            volume_graph_metrics = result.metrics.tool_metrics.get("create_volume_graph")
+            graph_metrics = moving_avg_graph_metrics or volume_graph_metrics
+            logger.info(f"Moving avg graph metrics: {moving_avg_graph_metrics}")
+            logger.info(f"Volume graph metrics: {volume_graph_metrics}")
 
             if user_wants_program:
                 file_bytes = io.BytesIO(response_text.encode("utf-8"))
@@ -143,17 +148,41 @@ class HerculesBot(commands.Bot):
                 img_bytes = img_details["source"]["bytes"]
 
                 img_type = img_details["format"]
-                await message.reply(
-                    """
-                    Here is your moving average graph. Please let me know if you have any questions or need further assistance.
-                    """,
-                    file=discord.File(
-                        io.BytesIO(img_bytes),
-                        filename=f"daily_bodyweight_graph.{img_type}",
-                    ),
-                )
+                if len(response_text) < self._DISCORD_MSG_LIMIT:
+                    await message.reply(
+                        response_text,
+                        file=discord.File(
+                            io.BytesIO(img_bytes),
+                            filename=f"graph.{img_type}",
+                        ),
+                    )
+                else:
+                    await message.reply(
+                        "The response is quite long and has hit the Discord limit, so I've put it into a markdown file instead.",
+                        file=discord.File(
+                            io.BytesIO(response_text.encode("utf-8")),
+                            filename="response.md",
+                        ),
+                    )
+                    await message.reply(
+                        "Graph generated.",
+                        file=discord.File(
+                            io.BytesIO(img_bytes),
+                            filename=f"graph.{img_type}",
+                        ),
+                    )
             else:
-                await message.reply(response_text)
+                if len(response_text) > self._DISCORD_MSG_LIMIT:
+                    # If the response is too long for a single message, split it into chunks
+                    await message.reply(
+                        "The response is quite long and has hit the Discord limit, so I've put it into a markdown file instead.",
+                        file=discord.File(
+                            io.BytesIO(response_text.encode("utf-8")),
+                            filename="response.md",
+                        ),
+                    )
+                else:
+                    await message.reply(response_text)
 
         except Exception as e:
             logger.exception(f"Error processing message: {e}")
