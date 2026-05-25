@@ -54,13 +54,19 @@ def create_volume_graph(tool: ToolUse, **kwargs) -> ToolResult:
             return {
                 "toolUseId": tool_use_id,
                 "status": "error",
-                "content": [{"text": "No muscle groups were provided for volume graph."}],
+                "content": [
+                    {"text": "No muscle groups were provided for volume graph."}
+                ],
             }
         if not volume:
             return {
                 "toolUseId": tool_use_id,
                 "status": "error",
-                "content": [{"text": "No volume values per muscle group were provided for volume graph."}],
+                "content": [
+                    {
+                        "text": "No volume values per muscle group were provided for volume graph."
+                    }
+                ],
             }
 
         try:
@@ -69,7 +75,11 @@ def create_volume_graph(tool: ToolUse, **kwargs) -> ToolResult:
             return {
                 "toolUseId": tool_use_id,
                 "status": "error",
-                "content": [{"text": "Invalid volume values provided. All values must be convertible to floats. DO NOT provide volume ranges. Round up if needed."}],
+                "content": [
+                    {
+                        "text": "Invalid volume values provided. All values must be convertible to floats. DO NOT provide volume ranges. Round up if needed."
+                    }
+                ],
             }
 
         plt.figure(figsize=(12, 5))

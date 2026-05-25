@@ -5,7 +5,6 @@ import datetime as _dt
 
 from openpyxl import load_workbook
 from strands.types.tools import ToolUse, ToolResult
-import io
 
 logger = logging.getLogger("hercules")
 
@@ -27,12 +26,13 @@ TOOL_SPEC = {
                 "sheet_name": {
                     "type": "string",
                     "description": "Sheet name of interest within the Excel workbook.",
-                }
+                },
             },
-            "required": ["workbook_file_path", "sheet_name"]
+            "required": ["workbook_file_path", "sheet_name"],
         }
-    }
+    },
 }
+
 
 def query_sheet(tool: ToolUse, **kwargs) -> ToolResult:
     """
@@ -51,26 +51,37 @@ def query_sheet(tool: ToolUse, **kwargs) -> ToolResult:
                 "status": "error",
                 "content": [{"text": "No workbook data has been provided."}],
             }
-        
+
         workbook = load_workbook(filename=workbook_file_path, read_only=True)
         if workbook_sheet_name not in workbook.sheetnames:
             return {
                 "toolUseId": tool_use_id,
                 "status": "error",
-                "content": [{"text": f"Sheet name {workbook_sheet_name} not found in workbook."}],
+                "content": [
+                    {"text": f"Sheet name {workbook_sheet_name} not found in workbook."}
+                ],
             }
-        
+
         # We set this in order to not overwhelm the context window with too much data
         # TODO: Look into context offloading via retrieval to be able to retrieve more data without overwhelming the context window
         max_rows = 500
         max_cols = 50
         sheet = workbook[workbook_sheet_name]
-        sheet_rows = [row for row in sheet.iter_rows(max_row=max_rows, max_col=max_cols, values_only=True)]
+        sheet_rows = [
+            row
+            for row in sheet.iter_rows(
+                max_row=max_rows, max_col=max_cols, values_only=True
+            )
+        ]
 
         # Serialize cell values so the result is JSON-safe (datetimes -> ISO, bytes -> base64)
         # Convert to a sparse representation: keep only non-null cells as {col, value} entries
         serialized_rows = [
-            [{"col": i + 1, "value": _serialize_cell(c)} for i, c in enumerate(row) if c is not None]
+            [
+                {"col": i + 1, "value": _serialize_cell(c)}
+                for i, c in enumerate(row)
+                if c is not None
+            ]
             for row in sheet_rows
         ]
         logger.info(f"Serialized rows: {serialized_rows}")
@@ -95,7 +106,9 @@ def query_sheet(tool: ToolUse, **kwargs) -> ToolResult:
             "toolUseId": tool_use_id,
             "status": "success",
             "content": [
-                {"text": f"Workbook has been analysed successfully. The first {len(sheet_rows)} rows and up to {max_cols} columns have been retrieved. Only non-empty cells are returned."},
+                {
+                    "text": f"Workbook has been analysed successfully. The first {len(sheet_rows)} rows and up to {max_cols} columns have been retrieved. Only non-empty cells are returned."
+                },
                 {"json": {"rows": serialized_rows, "urls": urls}},
             ],
         }
@@ -107,10 +120,11 @@ def query_sheet(tool: ToolUse, **kwargs) -> ToolResult:
             "content": [{"text": f"Failed to analyse workbook structure: {str(e)}"}],
         }
 
+
 def _serialize_cell(cell):
     """
     Serialize Excel cell values to be JSON-safe.
-    
+
     :param cell: The cell value to serialize.
     :returns: A JSON-safe representation of the cell value.
 

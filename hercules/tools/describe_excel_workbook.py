@@ -1,10 +1,8 @@
-import base64
 import logging
 import re
 
 from openpyxl import load_workbook
 from strands.types.tools import ToolUse, ToolResult
-import io
 
 logger = logging.getLogger("hercules")
 
@@ -21,13 +19,14 @@ TOOL_SPEC = {
             "properties": {
                 "workbook_file_path": {
                     "type": "string",
-                    "description": "File path for the temporary Excel workbook. It must include the file extension."
+                    "description": "File path for the temporary Excel workbook. It must include the file extension.",
                 }
             },
-            "required": ["workbook_file_path"]
+            "required": ["workbook_file_path"],
         }
-    }
+    },
 }
+
 
 def describe_excel_workbook(tool: ToolUse, **kwargs) -> ToolResult:
     """
@@ -49,7 +48,7 @@ def describe_excel_workbook(tool: ToolUse, **kwargs) -> ToolResult:
                 "status": "error",
                 "content": [{"text": "No workbook data has been provided."}],
             }
-        
+
         sample_max_rows = 10
         sample_max_cols = 20
 
@@ -62,7 +61,12 @@ def describe_excel_workbook(tool: ToolUse, **kwargs) -> ToolResult:
         aggregated_seen = set()
         for sheet_name in workbook_sheet_names:
             sheet = workbook[sheet_name]
-            sample_rows = [row for row in sheet.iter_rows(max_row=sample_max_rows, max_col=sample_max_cols, values_only=True)]
+            sample_rows = [
+                row
+                for row in sheet.iter_rows(
+                    max_row=sample_max_rows, max_col=sample_max_cols, values_only=True
+                )
+            ]
 
             # Extract URLs from sample rows
             urls = []
@@ -95,15 +99,19 @@ def describe_excel_workbook(tool: ToolUse, **kwargs) -> ToolResult:
                 "urls": urls,
             }
 
-        logger.info(f"Workbook description generated successfully for {workbook_file_path}")
+        logger.info(
+            f"Workbook description generated successfully for {workbook_file_path}"
+        )
 
         return {
             "toolUseId": tool_use_id,
             "status": "success",
             "content": [
-                {"text": f"{workbook_file_path} workbook structure has been analysed successfully. Contents have been sampled with a maximum of {sample_max_rows} rows and {sample_max_cols} columns."},
-                {"json": {"sheets": sheet_details, "urls": aggregated_urls}}
-            ]
+                {
+                    "text": f"{workbook_file_path} workbook structure has been analysed successfully. Contents have been sampled with a maximum of {sample_max_rows} rows and {sample_max_cols} columns."
+                },
+                {"json": {"sheets": sheet_details, "urls": aggregated_urls}},
+            ],
         }
     except Exception as e:
         logger.exception(f"Error analysing workbook structure: {e}")

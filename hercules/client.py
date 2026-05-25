@@ -1,4 +1,3 @@
-import base64
 from datetime import datetime
 import hashlib
 import io
@@ -80,7 +79,7 @@ class HerculesBot(commands.Bot):
         await message.channel.typing()  # Show typing indicator while processing
 
         try:
-            agent_work_dir = tempfile.mkdtemp(prefix='hercules_agent_run_')
+            agent_work_dir = tempfile.mkdtemp(prefix="hercules_agent_run_")
             # Get the message content, removing the bot mention if present
             user_input = message.content.replace(f"<@{self.user.id}>", "").strip()
 
@@ -91,17 +90,23 @@ class HerculesBot(commands.Bot):
             """
             if message.attachments:
                 logger.info(message.attachments[0].content_type)
-                file_extension = MIME_TYPES.get(message.attachments[0].content_type, "ignore")
+                file_extension = MIME_TYPES.get(
+                    message.attachments[0].content_type, "ignore"
+                )
                 if not file_extension == "ignore":
                     attachment_contents = await message.attachments[0].read()
                     time_of_upload = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                     # Store the attachment in the bot-level persistent directory
-                    store_filename = f"{time_of_upload}_{hashed_user_id}_attachment.{file_extension}"
-                    store_temp_file_path = os.path.join(self.persistent_files_dir, store_filename)
+                    store_filename = (
+                        f"{time_of_upload}_{hashed_user_id}_attachment.{file_extension}"
+                    )
+                    store_temp_file_path = os.path.join(
+                        self.persistent_files_dir, store_filename
+                    )
                     logger.info(f"Storing attachment to {store_temp_file_path}")
                     with open(store_temp_file_path, "wb") as f:
                         f.write(attachment_contents)
-                        
+
                     # Track this file for possible later cleanup or introspection
                     self._persistent_files.add(store_temp_file_path)
 
@@ -118,8 +123,12 @@ class HerculesBot(commands.Bot):
                 skill_metrics
                 and skill_metrics.tool["input"]["skill_name"] == "program-creator"
             )
-            moving_avg_graph_metrics = result.metrics.tool_metrics.get("create_moving_avg_graph")
-            volume_graph_metrics = result.metrics.tool_metrics.get("create_volume_graph")
+            moving_avg_graph_metrics = result.metrics.tool_metrics.get(
+                "create_moving_avg_graph"
+            )
+            volume_graph_metrics = result.metrics.tool_metrics.get(
+                "create_volume_graph"
+            )
             graph_metrics = moving_avg_graph_metrics or volume_graph_metrics
             logger.info(f"Moving avg graph metrics: {moving_avg_graph_metrics}")
             logger.info(f"Volume graph metrics: {volume_graph_metrics}")
