@@ -1,0 +1,1 @@
+- Hercules should analyse programs and give feedback optionally if requested

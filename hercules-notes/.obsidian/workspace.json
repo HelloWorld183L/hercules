@@ -13,28 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Tackling file inputs and outputs in Hercules.md",
+                "file": "User research.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Tackling file inputs and outputs in Hercules"
-            }
-          }
-        ]
-      },
-      {
-        "id": "4caa70dbf8b7fb8c",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "0c631fedf41bed46",
-            "type": "leaf",
-            "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "title": "User research"
             }
           }
         ]
@@ -94,8 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "935125bebaa9e44c",
@@ -197,9 +180,15 @@
       "bases:Create new base": false
     }
   },
-  "active": "0c631fedf41bed46",
+  "active": "c10a38dd92824799",
   "lastOpenFiles": [
-    "Welcome.md",
-    "Tackling file inputs and outputs in Hercules.md"
+    "Hercules hiccups.md",
+    "User research.md",
+    "Analyse program and give feedback.md",
+    "Solution notes/Tackling file inputs and outputs in Hercules.md",
+    "Solution notes/Untitled.canvas",
+    "Solution notes/Untitled.base",
+    "Solution notes",
+    "Welcome.md"
   ]
 }

@@ -1,0 +1,7 @@
+- Add in ability for users to add in equipment they have access to (e.g. dbs, barbells, machines) for mem0
+- "For more detail, info on possible body part overlap (eg tris and chest), movement synergies, overall progression structure, volume and load progression, ideas to improve flexibility if needed, alternative options for movements and/or rep ranges, optimization for different goals (eg strength, hypertrophy, overall fitness etc)"
+- "An option to tell it all the equipment available and how crowded it gets. So that it can help with optimizing supersets, ad hoc movement flexibility, and equipment pathing (ie better to start at the rack for 2 movements if you know the machine you want to do is very busy most the time)"
+- "Also, it should be able to easily output tables comparing concepts. Like discussing intensity from a powerlifting and hypertrophy perspective, equating double progression or DDP with evolving rep ranges etc"
+- "You just put it in memory once. Like ie here are my stats, goals, and equipment. Now tell me how to adopt PHUL or nsuns for this"
+- "What would also be neat would be to be able to query on what specific coaches/authors say regarding a concept or approach"
+- "If it could also keep track of the work already done in the week would be amazing. It could say, well you're supposed to do seated row but the machine is takes. And you already did a lot of back this week, maybe fit in db or bb shrugs instead"

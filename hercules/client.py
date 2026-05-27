@@ -89,10 +89,13 @@ class HerculesBot(commands.Bot):
             [user_input: {user_input}]
             """
             if message.attachments:
-                logger.info(message.attachments[0].content_type)
-                file_extension = MIME_TYPES.get(
-                    message.attachments[0].content_type, "ignore"
-                )
+                content_type = message.attachments[0].content_type
+                # For text/csv files, the content type may come with additional parameters like charset
+                # so we split on ';' to get the main content type
+                if ';' in content_type:
+                    content_type = content_type.split(';')[0].strip()
+
+                file_extension = MIME_TYPES.get(content_type, "ignore")
                 if not file_extension == "ignore":
                     attachment_contents = await message.attachments[0].read()
                     time_of_upload = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -111,6 +114,11 @@ class HerculesBot(commands.Bot):
                     self._persistent_files.add(store_temp_file_path)
 
                     context_input += f", [file_extension: {file_extension}], [file_path: {store_temp_file_path}]"
+                else:
+                    logger.warning(
+                        f"Attachment with content type {message.attachments[0].content_type} is not supported and will be ignored."
+                    )
+
 
             result = await self.agent.invoke_async(context_input)
             if isinstance(result.message, dict) and "content" in result.message:

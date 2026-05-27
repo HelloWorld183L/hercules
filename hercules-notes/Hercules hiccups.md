@@ -1,0 +1,2 @@
+- Tends to overestimate volume in a program and prescribe more volume by default
+- When replying to a workout program message and I request a volume chart, it thinks that it has to generate a program. Strands correctly identifies to generate the graph but it also activates the skill to create a program

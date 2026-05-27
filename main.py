@@ -8,7 +8,7 @@ import os
 from dotenv import load_dotenv
 from strands import Agent, AgentSkills
 from strands.models.openai import OpenAIModel
-from strands_tools import calculator, current_time
+from strands_tools import calculator, current_time, file_read
 from strands_tools.tavily import tavily_extract
 from strands_tools import mem0_memory
 import warnings
@@ -71,6 +71,7 @@ async def main():
             query_sheet,
             create_volume_graph,
             tavily_extract,
+            file_read
         ],
         plugins=[plugin],
         system_prompt=system_prompt,
