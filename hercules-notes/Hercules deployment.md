@@ -1,0 +1,20 @@
+- Containerise the discord bot and agents API into separate containers
+	- These should be **stateless** in order to improve concurrency and overall scalability
+- Sessions should be stored centrally to be shared between agent workers
+	- https://strandsagents.com/docs/user-guide/concepts/agents/session-management/
+	- Session data includes:
+		- Conversation history (messages)
+		- Agent state (key-value storage)
+		- Other stateful information needed
+	- Options for persistence
+		- Redis session repository (create custom session repository subclass)
+		- Valkey session repository
+			- **Favoured option as it seems a bit simpler, more straightforward**
+		- S3 buckets
+			- Not keen on this approach as it seems slow/more expensive
+		- Bedrock AgentCore
+			- This option can also replace Mem0 layer since it provides LTM memory for user preferences
+- Deploy Strands Agents tools as a UTCP server?
+	- **Not necessary unless I want to do lots of tools. Overengineered approach**
+- Discord bot containers should be thin forwarders to Discord API
+- **USE `valkey-bundle` in order to do JSON operations**

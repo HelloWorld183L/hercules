@@ -1,24 +1,56 @@
 version: '3.8'
 
 services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
-    container_name: hercules-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: hercules_api:latest
     ports:
-      - "9200:9200"
-      - "9300:9300"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
+      - "8000:8000"
+    env_file: .env
+    environment:
+      VALKEY_HOST: valkey
+      VALKEY_PORT: 6379
+    depends_on:
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 30s
       timeout: 10s
+      retries: 3
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    image: hercules_bot:latest
+    depends_on:
+      api:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      # Point the bot to the API service by Docker service name
+      HERCULES_API_URL: http://api:8000
+      VALKEY_HOST: valkey
+      VALKEY_PORT: 6379
+    restart: unless-stopped
+
+  valkey:
+    # We use valkey-bundle as it comes bundled with valkey-json which we need for our session management
+    image: valkey/valkey-bundle:latest
+    env_file: .env
+    container_name: valkey
+    volumes:
+      - valkey_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
+      interval: 10s
+      timeout: 5s
       retries: 5
 
 volumes:
-  elasticsearch_data:
-    driver: local
+  valkey_data:
