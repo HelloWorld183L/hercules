@@ -36,7 +36,7 @@ class HerculesBot(commands.Bot):
         super().__init__(*args, **kwargs, intents=intents, command_prefix="")
         self.agent = agent
         # URL of the running Hercules API server (e.g. http://localhost:8000)
-        self.api_url = api_url or os.getenv("HERCULES_API_URL", "http://localhost:8000")
+        self.api_url = api_url
         self._dev_guild_id = dev_guild_id
         self._default_workout_program_name = default_workout_program_name
         # Persistent storage for uploaded files that should survive the

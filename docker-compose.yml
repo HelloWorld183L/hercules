@@ -38,6 +38,21 @@ services:
       VALKEY_PORT: 6379
     restart: unless-stopped
 
+  qdrant:
+    image: qdrant/qdrant:latest
+    env_file: .env
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6333/collections || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   valkey:
     # We use valkey-bundle as it comes bundled with valkey-json which we need for our session management
     image: valkey/valkey-bundle:latest
@@ -54,3 +69,4 @@ services:
 
 volumes:
   valkey_data:
+  qdrant_storage:
