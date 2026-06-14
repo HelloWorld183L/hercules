@@ -14,6 +14,7 @@ from hercules.tools import (
     describe_excel_workbook,
     query_sheet,
     create_volume_graph,
+    search_knowledgebase,
 )
 
 from strands_valkey_session_manager import ValkeySessionManager
@@ -72,6 +73,7 @@ def build_agent() -> Agent:
             create_volume_graph,
             tavily_extract,
             file_read,
+            search_knowledgebase,
         ],
         plugins=[plugin],
         system_prompt=system_prompt,

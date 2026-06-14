@@ -2,15 +2,15 @@
 
 import uvicorn
 import os
-from pathlib import Path
+import logging
+import sys
 from dotenv import load_dotenv
-from qdrant_client import QdrantClient
-from qdrant_client.models import VectorParams, PointStruct
-import openai
+
+from hercules.vector_client import VectorStoreClient
 
 load_dotenv()
 
-COLLECTION = "hercules_knowledge_base"
+COLLECTION = os.getenv("COLLECTION_NAME")
 DISTANCE = "Cosine"
 
 KNOWLEDGE_BASE_DIR = os.path.join("knowledge-base", "knowledge")
@@ -22,70 +22,30 @@ OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL")
 if not OPENAI_API_KEY:
     raise RuntimeError("OPENAI_API_KEY environment variable must be set for embeddings")
 
-def embed(chunks: list[str], embedding_model: str, openai_client: openai.OpenAI) -> list[list[float]]:
-    """Embed a list of texts using OpenAI Embeddings API."""
-    # OpenAI can accept a list of inputs and returns embeddings in the same order
-    # Use batching if chunks is large to avoid very large requests
-    embeddings: list[list[float]] = []
-    batch_size = 32
-    for i in range(0, len(chunks), batch_size):
-        batch = chunks[i : i + batch_size]
-        resp = openai_client.embeddings.create(model=embedding_model, input=batch)
-        embeddings.extend([d.embedding for d in resp.data])
-    return embeddings
-
-def ingest(folder_path: str, client: QdrantClient):
-    """Ingest markdown files from the specified folder into Qdrant."""
-    docs = load_markdown_file(folder_path)
-    point_id = 0
-
-    for doc in docs:
-        chunks = chunk_text(doc["text"])
-        vectors = embed(chunks, OPENAI_EMBEDDING_MODEL, openai_client)
-
-        points = []
-        for i, (chunk, vector) in enumerate(zip(chunks, vectors)):
-            point = PointStruct(
-                id=point_id,
-                vector=vector,
-                payload={"text": chunk, "source": doc["path"], "chunk": i}
-            )
-            points.append(point)
-            point_id += 1
-
-        client.upsert(collection_name=COLLECTION, points=points)
-
-def load_markdown_file(folder_path: str) -> list[dict[str, str]]:
-    """Load the contents of markdown files under `folder_path`."""
-    docs = []
-    for file in Path(folder_path).rglob("*.md"):
-        text = file.read_text(encoding="utf-8")
-        docs.append({"path": str(file), "text": text})
-    return docs
-
-def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
-    """Split text into chunks with overlap."""
-    chunks = []
-    start = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunks.append(text[start:end])
-        start = end - overlap  # Move back by overlap for the next chunk
-    return chunks
+vector_client = VectorStoreClient(
+    host_url=QDRANT_HOST_URL,
+    openai_api_key=OPENAI_API_KEY,
+    embedding_model_name=OPENAI_EMBEDDING_MODEL,
+    collection_name=COLLECTION
+)
 
 if __name__ == "__main__":
-    openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
-    qdrant_client = QdrantClient(url=QDRANT_HOST_URL)
+    vector_client.create_collection(distance=DISTANCE)
+    vector_client.ingest(KNOWLEDGE_BASE_DIR)
+    # Ensure Strands and Hercules logs go to stdout so container logs are
+    # captured by `docker logs` and aggregators.
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    formatter = logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
 
-    # Infer embedding size by requesting an embedding for a small sample
-    sample = ["This is a sample embedding to infer vector dimensionality."]
-    sample_embedding = openai_client.embeddings.create(model=OPENAI_EMBEDDING_MODEL, input=sample).data[0].embedding
-    embedding_dim = len(sample_embedding)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(formatter)
 
-    qdrant_client.recreate_collection(
-        collection_name=COLLECTION,
-        vectors_config=VectorParams(size=embedding_dim, distance=DISTANCE),
-    )
+    strands_logger = logging.getLogger("strands")
+    strands_logger.setLevel(logging.DEBUG)
+    strands_logger.addHandler(stream_handler)
 
-    ingest(KNOWLEDGE_BASE_DIR, qdrant_client)
+    hercules_logger = logging.getLogger("hercules")
+    hercules_logger.setLevel(logging.DEBUG)
+    hercules_logger.addHandler(stream_handler)
+
     uvicorn.run("hercules.api_server:app", host="0.0.0.0", port=8000, reload=False)

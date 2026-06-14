@@ -2,9 +2,8 @@ version: '3.8'
 
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
+    build: .
+    command: python main_api.py
     image: hercules_api:latest
     ports:
       - "8000:8000"
@@ -23,9 +22,8 @@ services:
       retries: 3
 
   bot:
-    build:
-      context: .
-      dockerfile: Dockerfile.bot
+    build: .
+    command: python main.py
     image: hercules_bot:latest
     depends_on:
       api:

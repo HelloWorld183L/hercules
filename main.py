@@ -31,16 +31,14 @@ async def main():
     # If HERCULES_API_URL is set, run the bot in stateless mode and proxy
     # requests to the API server. Otherwise, build a local agent instance.
     api_url = os.getenv("HERCULES_API_URL")
-    if api_url:
-        agent = None
-    else:
-        agent = build_agent()
+    if not api_url:
+        raise ValueError("HERCULES_API_URL environment variable must be set to the URL of the running Hercules API server (e.g. http://localhost:8000)")
 
     # Ensure loggers exist
     setup_loggers()
 
     async with HerculesBot(
-        agent=agent,
+        agent=None,
         api_url=api_url,
         default_workout_program_name=DEFAULT_WORKOUT_PROGRAM_NAME,
         dev_guild_id=dev_guild_id,
@@ -60,14 +58,6 @@ def setup_loggers():
     discord_logger = logging.getLogger("discord")
     discord_logger.setLevel(logging.DEBUG)
     discord_logger.addHandler(stream_handler)
-
-    strands_logger = logging.getLogger("strands")
-    strands_logger.setLevel(logging.DEBUG)
-    strands_logger.addHandler(stream_handler)
-
-    hercules_logger = logging.getLogger("hercules")
-    hercules_logger.setLevel(logging.DEBUG)
-    hercules_logger.addHandler(stream_handler)
 
 
 asyncio.run(main())

@@ -1,164 +1,148 @@
-# Dynamic Double Progression (DDP) – Explained
+# Dynamic Double Progression
+
+*Based on concepts described by Sean Nalewanyj's article on dynamic double progression.*
 
 ## Overview
 
-Dynamic Double Progression is a progressive overload method used in strength training and hypertrophy programs to help you steadily increase muscle and strength gains.
+Dynamic Double Progression is a simple progression system for strength and muscle growth that focuses on:
 
-It is an evolution of traditional “double progression,” designed to be more flexible and responsive to your actual performance and fatigue levels.
+1. Increasing repetitions within a target rep range.
+2. Increasing weight once the upper end of the rep range is reached.
 
-The key idea is:
+The method is designed to apply **progressive overload**, which is a primary driver of long-term muscle growth and strength gains.
 
-You progress by adjusting both reps and weight, but you also autoregulate based on how each set actually feels and performs.
+---
 
 ## Why Progression Matters
 
-Muscle growth and strength gains require progressive overload, meaning:
+Many training programs prescribe fixed sets and reps (e.g., 3×10) but do not explain how to progress over time.
 
-You gradually lift more weight over time
-You perform more reps over time
-Or both
+Without gradually increasing training demands, muscle growth eventually stalls. Progressive overload is achieved most effectively by gradually lifting more weight over time.
 
-Without progression, training becomes static and results stall.
+---
 
-Traditional Double Progression (Baseline Concept)
+# Basic Double Progression
 
-Before understanding DDP, you need the standard version:
+## How It Works
 
-### How it works
-Choose a rep range (e.g., 8–10 reps)
-Use the same weight for all sets
-Try to increase reps over time
-Once you hit the top of the range for all sets, increase weight
-Repeat
-Example
-Week 1: 100 kg × 8, 8, 7
-Week 2: 100 kg × 9, 8, 8
-Week 3: 100 kg × 10, 10, 10 → increase weight next session
+Choose a rep range, such as:
 
-## Limitations
+- 8–10 reps
+- 6–8 reps
+- 5–7 reps
 
-This method is static, meaning:
+Your goal is to reach the **top of the rep range on all sets** before increasing the weight.
 
-- It doesn’t account for daily fatigue or readiness
-- It forces all sets to behave the same way
-- Progress can be slow or unclear
+### Example
 
-## What Makes Dynamic Double Progression Different
+**Exercise:** Squat  
+**Rep Range:** 8–10  
+**Sets:** 3
 
-Dynamic Double Progression improves the system by:
+#### Workout 1
 
-1. Autoregulation
+| Set | Weight | Reps |
+|------|--------|------|
+| 1 | 220 lb | 10 |
+| 2 | 220 lb | 9 |
+| 3 | 220 lb | 8 |
 
-You adjust based on how each set performs in real time
+#### Workout 2
 
-2. Set-by-set flexibility
+| Set | Weight | Reps |
+|------|--------|------|
+| 1 | 220 lb | 10 |
+| 2 | 220 lb | 10 |
+| 3 | 220 lb | 9 |
 
-Weights can change between sets if needed
+#### Workout 3
 
-3. Focus on effort consistency
+| Set | Weight | Reps |
+|------|--------|------|
+| 1 | 220 lb | 10 |
+| 2 | 220 lb | 10 |
+| 3 | 220 lb | 10 |
 
-You aim to keep similar effort levels (RIR/RPE) across all sets
+Once all sets reach 10 reps, increase the weight and repeat the process.
 
-### Key Concept: RIR (Reps in Reserve)
+---
 
-Most DDP systems use:
+# Dynamic Double Progression
 
-~1–2 reps in reserve (RIR)
-This means you stop each set just short of failure
+## How It Differs
 
-This keeps effort consistent and prevents burnout.
+Dynamic Double Progression uses the same rep-range concept but only tracks the **first working set** for progression.
 
-## How Dynamic Double Progression Works
-Step 1: Choose a rep range
+When the first set reaches the upper limit of the rep range:
 
-Example:
+- Increase the weight next session.
+- Continue performing the remaining sets with high effort.
+- Stay approximately 1–2 reps shy of failure (around RPE 8–9).
 
-8–10 reps per set
-Step 2: Use a target effort
-Usually ~1–2 RIR (not to failure)
-Step 3: Track the FIRST set as the main indicator
+### Example
 
-The first set determines progression.
+**Rep Range:** 8–10
 
-## Progression Rules
-If you hit the TOP of the rep range on the first set:
-Increase weight next session
+If your first set reaches:
 
-If you are in the middle:
-Keep weight the same
+225 × 10
 
-If you hit the bottom:
-You may reduce weight slightly for later sets
-Example (Simplified)
 
-Workout 1
-Set 1: 100 kg × 8
-Set 2: 100 kg × 8
-Set 3: 95 kg × 9
-Workout 2
-Set 1: 100 kg × 9
-Set 2: 100 kg × 8
-Set 3: 95 kg × 8
-Workout 3
-Set 1: 100 kg × 10 → increase weight next session
-Set 2: 100 kg × 9
-Set 3: 100 kg × 8
-Workout 4
-Set 1: 105 kg × 8
-Set 2: 100 kg × 9
-Set 3: 100 kg × 8
+Increase the weight next workout, even if later sets did not reach 10 reps.
 
-## Core Principles of DDP
-1. First set drives progression
+---
 
-The first set is the “signal” for whether to increase weight.
+# Why Dynamic Double Progression May Be Better
 
-2. Effort matters more than numbers
+According to the article, dynamic double progression offers several advantages:
 
-Instead of chasing exact reps, you focus on:
+- Maintains a more consistent effort level across workouts.
+- Allows faster progression in load.
+- Provides a clearer measure of strength improvements.
+- Avoids spending multiple sessions waiting for later sets to "catch up."
 
-Consistent effort
-Controlled fatigue
-Good execution
-3. Load can vary across sets
+---
 
-You don’t have to use the same weight every set.
+# Recommended Rep Ranges
 
-4. Progress is smoother
+The author recommends relatively narrow rep ranges such as:
 
-Because adjustments are smaller and more frequent.
+- 5–7 reps
+- 6–8 reps
+- 8–10 reps
 
-## Why DDP Works Well
-1. Better adapts to daily performance
+These ranges make weight increases easier to manage and help keep progression predictable.
 
-Some days you’re stronger, some days weaker.
+---
 
-2. Prevents wasted effort
+# Weight Increases
 
-You don’t “hold back” progress just because later sets lag.
+Typical increases include:
 
-3. Keeps intensity consistent
+| Exercise Type | Suggested Increase |
+|--------------|-------------------|
+| Compound lifts | 5–10 lb |
+| Isolation lifts | 2.5–5 lb |
 
-You maintain similar difficulty across sets.
+After increasing weight, expect to lose roughly 2 reps on the first set before building back up again.
 
-4. More realistic overload
+---
 
-Progress happens when your body is actually ready.
+# Practical Rules
 
-## Best Use Cases
+1. Select a target rep range.
+2. Focus on improving the first working set.
+3. When the first set reaches the top of the range, increase weight.
+4. Keep subsequent sets hard but stop 1–2 reps before failure.
+5. Repeat indefinitely.
 
-Dynamic Double Progression works best for:
+---
 
-Hypertrophy training
-Intermediate lifters
-Isolation exercises (lateral raises, curls, etc.)
-Compound lifts with moderate volume
+# Summary
 
-## Key Takeaway
+Dynamic Double Progression is a progression model that:
 
-Dynamic Double Progression is a flexible, autoregulated progression system that:
-
-Uses rep ranges + weight increases
-Adjusts based on real performance
-Prioritizes consistent effort over rigid tracking
-Helps ensure continuous, realistic progress
+- Uses both reps and weight to drive progress.
+- Prioritizes performance on the first working set.
+- Increases load as soon as the first set reaches the top of the target rep range.
+- Keeps training simple while ensuring long-term progressive overload.

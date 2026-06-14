@@ -11,12 +11,10 @@ from hercules.mime_types import MIME_TYPES
 
 logger = logging.getLogger("hercules.api")
 
-
 app = FastAPI(title="Hercules Agent API", version="0.1.0")
 
 # Agent instance created at startup
 agent = build_agent()
-
 
 @app.get("/health")
 def health():
@@ -56,7 +54,7 @@ async def invoke(
     """
     try:
         hashed_user_id = (
-            hashlib.sha256(user_id.encode()).hexdigest() if user_id else "anonymous"
+            hashlib.sha256(user_id.encode()).hexdigest()
         )
 
         context_input = f"[user_id: {hashed_user_id}], [user_input: {content}]"
@@ -105,5 +103,5 @@ async def invoke(
         return JSONResponse(content=payload)
 
     except Exception as e:
-        logger.exception("Error invoking agent")
+        logger.exception(f"Error invoking agent: {e}")
         raise HTTPException(status_code=500, detail=str(e))
