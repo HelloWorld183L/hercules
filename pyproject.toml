@@ -16,6 +16,7 @@ dependencies = [
     "python-multipart>=0.0.6",
     "httpx>=0.24.0",
     "strands-valkey-session-manager>=0.1.0",
+    "scipy>=1.18.0",
 ]
 
 [build-system]

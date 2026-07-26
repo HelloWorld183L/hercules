@@ -3,4 +3,5 @@ MIME_TYPES = {
     "text/csv": "csv",
     "text/plain": "txt",
     "text/markdown": "md",
+    "fitnotes_db": "fitnotes",
 }

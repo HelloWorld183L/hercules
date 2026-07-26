@@ -5,13 +5,13 @@ import os
 from dotenv import load_dotenv
 from strands import Agent, AgentSkills
 from strands.models.openai import OpenAIModel
-from strands_tools import calculator, current_time, file_read
-from strands_tools.tavily import tavily_extract
-from strands_tools import mem0_memory
+from strands_tools import calculator, current_time, file_read, mem0_memory
+from strands_tools.tavily import tavily_extract, tavily_search
 
 from hercules.tools import (
     create_moving_avg_graph,
     describe_excel_workbook,
+    extract_workoutlog_stats,
     query_sheet,
     create_volume_graph,
     search_knowledgebase,
@@ -71,6 +71,8 @@ def build_agent() -> Agent:
             describe_excel_workbook,
             query_sheet,
             create_volume_graph,
+            extract_workoutlog_stats,
+            tavily_search,
             tavily_extract,
             file_read,
             search_knowledgebase,

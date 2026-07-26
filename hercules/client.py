@@ -99,8 +99,17 @@ class HerculesBot(commands.Bot):
                 content_type = att.content_type
                 if content_type and ";" in content_type:
                     content_type = content_type.split(";")[0].strip()
-
-                file_extension = MIME_TYPES.get(content_type, "ignore")
+                    file_extension = MIME_TYPES.get(content_type, "ignore")
+                # If content_type is None, try to infer from filename
+                elif not content_type:
+                    file_extension = att.filename.split(".")[-1].lower()
+                    content_type = next(
+                        (k for k, v in MIME_TYPES.items() if v == file_extension),
+                        "application/octet-stream",
+                    )
+                    logger.warning(
+                        f"Attachment {att.filename} has no content type; inferred as {content_type} based on file extension."
+                    )
                 attachment_contents = await att.read()
 
                 # Store a persistent copy like before

@@ -154,6 +154,7 @@ numpy==2.4.6
     #   matplotlib
     #   pandas
     #   qdrant-client
+    #   scipy
     #   seaborn
 openai==2.41.0
     # via
@@ -272,6 +273,8 @@ rpds-py==2026.5.1
     #   referencing
 s3transfer==0.18.0
     # via boto3
+scipy==1.18.0
+    # via hercules (pyproject.toml)
 seaborn==0.13.2
     # via hercules (pyproject.toml)
 six==1.17.0
