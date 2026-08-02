@@ -39,16 +39,20 @@ TOOL_SPEC = {
                 },
                 "start_datetime": {
                     "type": "string",
-                    "description": "The start datetime for filtering workout log entries.  Convert to ISO 8601 format (YYYY-MM-DDTHH:MM:SS) for consistency."
+                    "description": "The start datetime for filtering workout log entries. Convert to ISO 8601 format (YYYY-MM-DDTHH:MM:SS) for consistency. If no start_datetime is provided, set to 'zero' date (e.g. 1970-01-01T00:00:00) to include all entries from the beginning of time."
                 },
                 "end_datetime": {
                     "type": "string",
-                    "description": "The end datetime for filtering workout log entries. Convert to ISO 8601 format (YYYY-MM-DDTHH:MM:SS) for consistency."
+                    "description": "The end datetime for filtering workout log entries. Convert to ISO 8601 format (YYYY-MM-DDTHH:MM:SS) for consistency. If no start_datetime is provided, set to 'max' date (e.g. 2200-12-31T23:59:59) to include all entries from the beginning of time."
                 },
                 "days_in_gym": {
                     "type": "integer",
-                    "description": "The number of days the user spent in the gym during the requested time range. When provided, workout consistency is calculated as a percentage of gym days attended."
+                    "description": "The number of days in the week the user spent in the gym during the requested time range. When provided, workout consistency is calculated as a percentage of gym days attended. This MUST be between 1 and 7, inclusive. If not provided, workout consistency will not be calculated."
                 },
+                "recent_bodyweight": {
+                    "type": "number",
+                    "description": "The user's most recent bodyweight in kilograms or pounds. This is used to calculate estimated one rep maxes for bodyweight exercises. If not provided, stats for bodyweight exercises will use a weight of 1.0. Multiply by bodyweight later if needed."
+                }
             },
             "required": ["log_file_path", "inferred_file_type"],
         }
@@ -75,9 +79,26 @@ def extract_workoutlog_stats(tool: ToolUse, **kwargs) -> ToolResult:
         inferred_file_type = tool_input['inferred_file_type']
         start_datetime = tool_input.get('start_datetime')
         end_datetime = tool_input.get('end_datetime')
-        days_in_gym = tool_input.get('days_in_gym')
+        days_in_gym = int(tool_input.get('days_in_gym'))
+        recent_bodyweight = tool_input.get('recent_bodyweight')
+        if recent_bodyweight:
+            recent_bodyweight = float(recent_bodyweight)
 
-        logger.info(f"Received request to extract stats from workout log at {log_file_path}")
+            if recent_bodyweight <= 0:
+                return {
+                    "toolUseId": tool_use_id,
+                    "status": "error",
+                    "content": [{"text": f"Invalid recent_bodyweight value: {recent_bodyweight}. It must be a positive number."}],
+                }
+
+        if days_in_gym is not None and (days_in_gym < 1 or days_in_gym > 7):
+            return {
+                "toolUseId": tool_use_id,
+                "status": "error",
+                "content": [{"text": f"Invalid days_in_gym value: {days_in_gym}. It must be between 1 and 7, inclusive."}],
+            }
+
+        logger.info(f"Received request to extract stats from workout log at {log_file_path} with inferred file type {inferred_file_type}, start_datetime {start_datetime}, end_datetime {end_datetime}, and days_in_gym {days_in_gym}")
 
         if not log_file_path:
             return {
@@ -133,7 +154,7 @@ def extract_workoutlog_stats(tool: ToolUse, **kwargs) -> ToolResult:
         
         logger.info(f"Workout log loaded parsed from {log_file_path} into {len(workout_log_entries)} workout log entries.")
 
-        workout_stats = compute_workoutlog_stats(workout_log_entries, days_in_gym=days_in_gym)
+        workout_stats = compute_workoutlog_stats(workout_log_entries, days_in_gym=days_in_gym, bodyweight=recent_bodyweight)
 
         logger.info(
             f"Workout log stats computed successfully from {log_file_path}"
@@ -146,16 +167,31 @@ def extract_workoutlog_stats(tool: ToolUse, **kwargs) -> ToolResult:
             .dump_json(workout_stats.exercise_summary_stats)
             .decode()
         )
-        return {
+
+        output_dict : ToolResult = {
             "toolUseId": tool_use_id,
             "status": "success",
             "content": [
                 {
                     "text": f"{log_file_path} workout log stats have been computed successfully {date_range_str}."
                 },
-                {"json": {"exercise_summary_stats": exercise_summary_stats_json, "workout_consistency": workout_stats.workout_consistency}},
+                {"json": {"exercise_summary_stats": exercise_summary_stats_json}},
             ],
         }
+        
+        if workout_stats.workout_consistency == -1:
+            incomplete_consistency_msg = "Workout consistency has not been computed as `days_in_gym` was not provided."
+            output_dict["content"][0]["text"] += f" {incomplete_consistency_msg}"
+            logger.info(incomplete_consistency_msg)
+        else:
+            output_dict["content"][1]["json"]['workout_consistency'] = workout_stats.workout_consistency
+
+        if not recent_bodyweight:
+            no_bodyweight_msg = "No recent bodyweight was provided, so stats for bodyweight exercises will use a weight of 1.0. Multiply by bodyweight later if needed."
+            output_dict["content"][0]["text"] += f" {no_bodyweight_msg}"
+            logger.info(no_bodyweight_msg)
+
+        return output_dict
     except Exception as e:
         logger.exception(f"Error analysing workout log: {e}")
         return {
