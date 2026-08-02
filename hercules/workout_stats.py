@@ -71,7 +71,7 @@ def compute_workoutlog_stats(
     else:
         if days_in_gym and (days_in_gym < 1 or days_in_gym > 7):
             raise ValueError("`days_in_gym` must be between 1 and 7 when provided.")
-        
+
         workout_consistency = _compute_workout_consistency(
             workout_log_entries, days_in_gym
         )
@@ -92,8 +92,10 @@ def compute_workoutlog_stats(
         estimated_one_rep_max_progression_rate = _compute_progression_rate(
             exercise_stat.dates, exercise_stat.estimated_one_rep_maxes
         )
-        estimated_one_rep_max_progression_consistency = _compute_progression_consistency(
-            exercise_stat.dates, exercise_stat.estimated_one_rep_maxes
+        estimated_one_rep_max_progression_consistency = (
+            _compute_progression_consistency(
+                exercise_stat.dates, exercise_stat.estimated_one_rep_maxes
+            )
         )
         tonnage_progression_rate = _compute_progression_rate(
             exercise_stat.dates, exercise_stat.tonnages
@@ -118,6 +120,7 @@ def compute_workoutlog_stats(
         exercise_summary_stats=exercise_summary_stats,
         workout_consistency=workout_consistency,
     )
+
 
 def _compute_workout_consistency(
     workout_log_entries: list[WorkoutLogEntry], days_in_gym: int
@@ -157,7 +160,10 @@ def _compute_workout_consistency(
 
     return workout_consistency
 
-def _compute_exercise_stat_entries(workout_log_entries: list[WorkoutLogEntry], bodyweight: float | None) -> list[ExerciseStatsEntry]:
+
+def _compute_exercise_stat_entries(
+    workout_log_entries: list[WorkoutLogEntry], bodyweight: float | None
+) -> list[ExerciseStatsEntry]:
     exercise_stats_dict: dict[str, list[WorkoutLogEntry]] = {}
     for entry in workout_log_entries:
         exercise_stats_dict.setdefault(entry.exercise, []).append(entry)
@@ -186,6 +192,7 @@ def _compute_exercise_stat_entries(workout_log_entries: list[WorkoutLogEntry], b
 
     return exercise_stats
 
+
 def _fix_bodyweight_entries(
     workout_log_entries: list[WorkoutLogEntry], bodyweight: float | None
 ) -> list[WorkoutLogEntry]:
@@ -207,6 +214,7 @@ def _fix_bodyweight_entries(
                 entry.weight = bodyweight
 
     return workout_log_entries
+
 
 def _compute_progression_rate(
     dates: list[datetime.datetime], values: list[float]

@@ -95,11 +95,7 @@ def extract_workoutlog_stats(tool: ToolUse, **kwargs) -> ToolResult:
         return {
             "toolUseId": tool_use_id,
             "status": "error",
-            "content": [
-                {
-                    "text": error_message
-                }
-            ],
+            "content": [{"text": error_message}],
         }
 
     logger.info(
@@ -109,7 +105,7 @@ def extract_workoutlog_stats(tool: ToolUse, **kwargs) -> ToolResult:
     file_extension = log_file_path.split(".")[-1].lower()
     try:
         workout_log_entries = SUPPORTED_WORKOUTLOG_FORMATS[
-                (inferred_file_type, file_extension)
+            (inferred_file_type, file_extension)
         ](log_file_path)
     except KeyError:
         return {
@@ -126,7 +122,7 @@ def extract_workoutlog_stats(tool: ToolUse, **kwargs) -> ToolResult:
         date_range_str, workout_log_entries = _filter_workoutlog_entries_by_date_range(
             workout_log_entries, start_datetime, end_datetime
         )
-    except ValueError as e:
+    except ValueError:
         return {
             "toolUseId": tool_use_id,
             "status": "error",
@@ -191,6 +187,7 @@ def extract_workoutlog_stats(tool: ToolUse, **kwargs) -> ToolResult:
 
     return output_dict
 
+
 def _validate_tool_input(tool_input: dict) -> tuple[bool, str]:
     """
     Validate the tool input for required fields and correct types.
@@ -204,14 +201,21 @@ def _validate_tool_input(tool_input: dict) -> tuple[bool, str]:
     if "days_in_gym" in tool_input:
         days_in_gym = tool_input["days_in_gym"]
         if not isinstance(days_in_gym, int) or days_in_gym < 1 or days_in_gym > 7:
-            return False, f"Invalid days_in_gym value: {days_in_gym}. It must be an integer between 1 and 7."
+            return (
+                False,
+                f"Invalid days_in_gym value: {days_in_gym}. It must be an integer between 1 and 7.",
+            )
 
     if "recent_bodyweight" in tool_input:
         recent_bodyweight = tool_input["recent_bodyweight"]
         if not isinstance(recent_bodyweight, (int, float)) or recent_bodyweight <= 0:
-            return False, f"Invalid recent_bodyweight value: {recent_bodyweight}. It must be a positive number."
+            return (
+                False,
+                f"Invalid recent_bodyweight value: {recent_bodyweight}. It must be a positive number.",
+            )
 
     return True, ""
+
 
 def _filter_workoutlog_entries_by_date_range(
     workout_log_entries: list[WorkoutLogEntry],
@@ -232,7 +236,9 @@ def _filter_workoutlog_entries_by_date_range(
         end_datetime = datetime.datetime.fromisoformat(end_datetime)
 
         if start_datetime > end_datetime:
-            raise ValueError(f"Invalid date range: start_datetime {start_datetime} is after end_datetime {end_datetime}.")
+            raise ValueError(
+                f"Invalid date range: start_datetime {start_datetime} is after end_datetime {end_datetime}."
+            )
 
         filtered_workout_log_entries = [
             entry

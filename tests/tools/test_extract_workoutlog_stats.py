@@ -1,4 +1,3 @@
-import datetime
 import json
 from pathlib import Path
 
@@ -42,12 +41,17 @@ def test_extract_workoutlog_stats_returns_success_with_summary_payload(
     assert result["content"][0]["text"].startswith("")
     assert result["content"][1]["json"]["workout_consistency"] == 100
 
-    exercise_summary_stats = json.loads(result["content"][1]["json"]["exercise_summary_stats"])
+    exercise_summary_stats = json.loads(
+        result["content"][1]["json"]["exercise_summary_stats"]
+    )
     assert isinstance(exercise_summary_stats, list)
     assert len(exercise_summary_stats) == 1
     assert exercise_summary_stats[0]["exercise"] == "Squat"
 
-def test_extract_workoutlog_stats_rejects_unsupported_file_type(workout_log_csv: Path) -> None:
+
+def test_extract_workoutlog_stats_rejects_unsupported_file_type(
+    workout_log_csv: Path,
+) -> None:
     payload = {
         "toolUseId": "test-tool-use",
         "input": {
