@@ -1,10 +1,10 @@
 import base64
+import datetime as _dt
 import logging
 import re
-import datetime as _dt
 
 from openpyxl import load_workbook
-from strands.types.tools import ToolUse, ToolResult
+from strands.types.tools import ToolResult, ToolUse
 
 logger = logging.getLogger("hercules")
 
@@ -117,7 +117,7 @@ def query_sheet(tool: ToolUse, **kwargs) -> ToolResult:
         return {
             "toolUseId": tool_use_id,
             "status": "error",
-            "content": [{"text": f"Failed to analyse workbook structure: {str(e)}"}],
+            "content": [{"text": f"Failed to analyse workbook structure: {e!s}"}],
         }
 
 

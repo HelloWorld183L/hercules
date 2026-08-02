@@ -1,25 +1,24 @@
 """Module for building the Hercules agent."""
 
 import os
+from uuid import uuid4
 
+import valkey
 from dotenv import load_dotenv
 from strands import Agent, AgentSkills
 from strands.models.openai import OpenAIModel
 from strands_tools import calculator, current_time, file_read, mem0_memory
 from strands_tools.tavily import tavily_extract, tavily_search
+from strands_valkey_session_manager import ValkeySessionManager
 
 from hercules.tools import (
     create_moving_avg_graph,
+    create_volume_graph,
     describe_excel_workbook,
     extract_workoutlog_stats,
     query_sheet,
-    create_volume_graph,
     search_knowledgebase,
 )
-
-from strands_valkey_session_manager import ValkeySessionManager
-from uuid import uuid4
-import valkey
 
 
 def build_agent() -> Agent:
@@ -49,16 +48,20 @@ def build_agent() -> Agent:
     valkey_password = os.getenv("VALKEY_PASSWORD")
 
     if not valkey_host or not valkey_port:
-        raise RuntimeError("VALKEY_HOST and VALKEY_PORT environment variables must be set")
+        raise RuntimeError(
+            "VALKEY_HOST and VALKEY_PORT environment variables must be set"
+        )
 
-    client = valkey.Valkey(host=valkey_host, port=valkey_port, password=valkey_password, decode_responses=True)
+    client = valkey.Valkey(
+        host=valkey_host,
+        port=valkey_port,
+        password=valkey_password,
+        decode_responses=True,
+    )
     # Create a session manager with a unique session ID
     session_id = str(uuid4())
-    session_manager = ValkeySessionManager(
-        session_id=session_id,
-        client=client
-    )
-    
+    session_manager = ValkeySessionManager(session_id=session_id, client=client)
+
     agent_id = str(uuid4())
     agent = Agent(
         agent_id=agent_id,

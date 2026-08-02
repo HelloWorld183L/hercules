@@ -1,11 +1,12 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import JSONResponse
-import os
-import tempfile
+import base64
 import hashlib
 import logging
-import base64
-from typing import Optional
+import os
+import tempfile
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
+
 from hercules.agent import build_agent
 from hercules.mime_types import MIME_TYPES
 
@@ -16,12 +17,13 @@ app = FastAPI(title="Hercules Agent API", version="0.1.0")
 # Agent instance created at startup
 agent = build_agent()
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 
-def _store_upload(upload: UploadFile) -> Optional[str]:
+def _store_upload(upload: UploadFile) -> str | None:
     if not upload:
         return None
     content_type = upload.content_type
@@ -44,8 +46,8 @@ def _store_upload(upload: UploadFile) -> Optional[str]:
 @app.post("/invoke")
 async def invoke(
     content: str = Form(...),
-    user_id: Optional[str] = Form(None),
-    file: Optional[UploadFile] = File(None),
+    user_id: str | None = Form(None),
+    file: UploadFile | None = File(None),
 ):
     """Invoke the Strands Agent.
 
@@ -53,9 +55,7 @@ async def invoke(
     Returns JSON with the agent response; image/file payloads are base64-encoded.
     """
     try:
-        hashed_user_id = (
-            hashlib.sha256(user_id.encode()).hexdigest()
-        )
+        hashed_user_id = hashlib.sha256(user_id.encode()).hexdigest()
 
         context_input = f"[user_id: {hashed_user_id}], [user_input: {content}]"
 

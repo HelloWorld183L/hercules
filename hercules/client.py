@@ -1,19 +1,17 @@
-from datetime import datetime
+import atexit
+import base64
 import hashlib
 import io
-import atexit
 import logging
 import os
 import shutil
 import tempfile
-from typing import Optional
-import base64
-import httpx
-
-from discord import DMChannel, Intents, Message
-from discord.ext import commands
+from datetime import datetime
 
 import discord
+import httpx
+from discord import DMChannel, Intents, Message
+from discord.ext import commands
 from strands import Agent
 
 from hercules.mime_types import MIME_TYPES
@@ -25,10 +23,10 @@ class HerculesBot(commands.Bot):
     def __init__(
         self,
         *args,
-        agent: Optional[Agent] = None,
-        api_url: Optional[str] = None,
+        agent: Agent | None = None,
+        api_url: str | None = None,
         default_workout_program_name: str = "workout_program.md",
-        dev_guild_id: Optional[int] = None,
+        dev_guild_id: int | None = None,
         **kwargs,
     ):
         intents = Intents.default()

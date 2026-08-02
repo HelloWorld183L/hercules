@@ -6,10 +6,10 @@ import asyncio
 import logging
 import os
 import sys
-from dotenv import load_dotenv
 import warnings
 
-from hercules.agent import build_agent
+from dotenv import load_dotenv
+
 from hercules.client import HerculesBot
 
 # DeprecationWarning interferes with agent outputs
@@ -32,7 +32,9 @@ async def main():
     # requests to the API server. Otherwise, build a local agent instance.
     api_url = os.getenv("HERCULES_API_URL")
     if not api_url:
-        raise ValueError("HERCULES_API_URL environment variable must be set to the URL of the running Hercules API server (e.g. http://localhost:8000)")
+        raise ValueError(
+            "HERCULES_API_URL environment variable must be set to the URL of the running Hercules API server (e.g. http://localhost:8000)"
+        )
 
     # Ensure loggers exist
     setup_loggers()

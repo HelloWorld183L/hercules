@@ -1,21 +1,22 @@
 """Module for extracting statistics from workout logs."""
 
 import datetime
+import logging
 
 from pydantic import BaseModel
+from scipy import stats
 
 from hercules.parsers import WorkoutLogEntry
-
-from scipy import stats
-import logging
 
 logger = logging.getLogger("hercules")
 
 # Minimum number of samples required to compute meaningful statistics
 NUM_SAMPLES_REQUIRED = 2
 
+
 class NoWorkoutLogEntriesError(Exception):
     """Raised when there are not enough workout log entries to compute meaningful statistics from."""
+
 
 class ExerciseStatsEntry(BaseModel):
     """Statistics for a specific exercise."""
@@ -23,7 +24,9 @@ class ExerciseStatsEntry(BaseModel):
     dates: list[datetime.datetime]
     exercise: str
     estimated_one_rep_maxes: list[float]
-    tonnages: list[float]  # List of total weights lifted for this exercise (sets * reps * weight)
+    tonnages: list[
+        float
+    ]  # List of total weights lifted for this exercise (sets * reps * weight)
 
 
 class ExerciseSummaryStats(BaseModel):
@@ -53,21 +56,30 @@ class WorkoutLogSummaryStats(BaseModel):
     workout_consistency: int
     """Workout consistency as a percentage of gym days attended, or the number of workout days when no gym-day count is provided."""
 
-def compute_progression_rate(dates: list[datetime.datetime], values: list[float]) -> float:
+
+def compute_progression_rate(
+    dates: list[datetime.datetime], values: list[float]
+) -> float:
     """Compute the Theil-Sen slope of the values over time."""
     # Convert dates to ordinal for regression
     ordinals = [date.toordinal() for date in dates]
     result = stats.theilslopes(ordinals, values)
     return result.slope
 
-def compute_progression_consistency(dates: list[datetime.datetime], values: list[float]) -> float:
+
+def compute_progression_consistency(
+    dates: list[datetime.datetime], values: list[float]
+) -> float:
     """Compute Kendall's tau correlation coefficient for the values over time."""
     # Convert dates to ordinal for correlation
     ordinals = [date.toordinal() for date in dates]
     tau, _ = stats.kendalltau(ordinals, values)
     return tau
 
-def compute_workout_consistency(workout_log_entries: list[WorkoutLogEntry], days_in_gym: int) -> int:
+
+def compute_workout_consistency(
+    workout_log_entries: list[WorkoutLogEntry], days_in_gym: int
+) -> int:
     """Compute workout consistency as a percentage of gym days attended."""
     if len(workout_log_entries) == 0:
         raise NoWorkoutLogEntriesError("No workout log entries provided.")
@@ -75,7 +87,7 @@ def compute_workout_consistency(workout_log_entries: list[WorkoutLogEntry], days
         raise ValueError("`days_in_gym` must be greater than zero when provided.")
 
     # Use date-only values so multiple entries on the same day count as one workout day
-    unique_dates = { entry.date.date() for entry in workout_log_entries }
+    unique_dates = {entry.date.date() for entry in workout_log_entries}
 
     # Compute date range covered by the entries
     start_date = min(unique_dates)
@@ -85,19 +97,30 @@ def compute_workout_consistency(workout_log_entries: list[WorkoutLogEntry], days
     # Maximum possible workout days in the range given `days_in_gym` per week.
     full_weeks = total_days // 7
     remainder_days = total_days % 7
-    max_possible_workout_days = full_weeks * days_in_gym + min(remainder_days, days_in_gym)
+    max_possible_workout_days = full_weeks * days_in_gym + min(
+        remainder_days, days_in_gym
+    )
 
     # Actual attended workout days (unique calendar days with entries)
     actual_days_in_gym = len(unique_dates)
 
     # Compute consistency as a percentage of actual attended days over maximum possible
-    workout_consistency = round((actual_days_in_gym / max_possible_workout_days) * 100) if max_possible_workout_days > 0 else 0
+    workout_consistency = (
+        round((actual_days_in_gym / max_possible_workout_days) * 100)
+        if max_possible_workout_days > 0
+        else 0
+    )
 
     logger.info(f"Workout consistency computed: {workout_consistency}")
 
     return workout_consistency
 
-def compute_workoutlog_stats(workout_log_entries: list[WorkoutLogEntry], days_in_gym: int | None = None, bodyweight: float | None = None) -> WorkoutLogSummaryStats:
+
+def compute_workoutlog_stats(
+    workout_log_entries: list[WorkoutLogEntry],
+    days_in_gym: int | None = None,
+    bodyweight: float | None = None,
+) -> WorkoutLogSummaryStats:
     """Compute statistics from the workout log entries."""
 
     if len(workout_log_entries) == 0:
@@ -108,8 +131,10 @@ def compute_workoutlog_stats(workout_log_entries: list[WorkoutLogEntry], days_in
     else:
         if days_in_gym <= 0:
             raise ValueError("`days_in_gym` must be greater than zero when provided.")
-        
-        workout_consistency = compute_workout_consistency(workout_log_entries, days_in_gym)
+
+        workout_consistency = compute_workout_consistency(
+            workout_log_entries, days_in_gym
+        )
 
     logger.info(f"Workout consistency computed: {workout_consistency}")
 
@@ -117,24 +142,32 @@ def compute_workoutlog_stats(workout_log_entries: list[WorkoutLogEntry], days_in
     for entry in workout_log_entries:
         exercise_stats_dict.setdefault(entry.exercise, []).append(entry)
 
-    logger.info(f"Exercise stats dictionary constructed for computing summary statistics: {exercise_stats_dict}")
+    logger.info(
+        f"Exercise stats dictionary constructed for computing summary statistics: {exercise_stats_dict}"
+    )
     exercise_stats: list[ExerciseStatsEntry] = []
     for exercise, entries in exercise_stats_dict.items():
         sorted_entries = sorted(entries, key=lambda entry: entry.date)
 
         # Account for bodyweight stats
         if entry.weight == 0.0 and bodyweight is not None:
-            logger.info(f"Replacing weight of 0.0 with bodyweight {bodyweight} for exercise {exercise}.")
+            logger.info(
+                f"Replacing weight of 0.0 with bodyweight {bodyweight} for exercise {exercise}."
+            )
             for entry in sorted_entries:
                 if entry.weight == 0.0:
                     entry.weight = bodyweight
         elif entry.weight == 0.0 and bodyweight is None:
             for entry in sorted_entries:
                 if entry.weight == 0.0:
-                    logger.warning(f"Weight for exercise {exercise} on {entry.date} is 0.0 and no bodyweight provided. Setting weight to 1.0. Multiply by bodyweight later if needed.")
+                    logger.warning(
+                        f"Weight for exercise {exercise} on {entry.date} is 0.0 and no bodyweight provided. Setting weight to 1.0. Multiply by bodyweight later if needed."
+                    )
                     entry.weight = 1.0
 
-        estimated_one_rep_maxes = [entry.weight * (1 + entry.reps / 30) for entry in sorted_entries]
+        estimated_one_rep_maxes = [
+            entry.weight * (1 + entry.reps / 30) for entry in sorted_entries
+        ]
         tonnages = [entry.sets * entry.reps * entry.weight for entry in sorted_entries]
 
         exercise_stats.append(
@@ -151,13 +184,23 @@ def compute_workoutlog_stats(workout_log_entries: list[WorkoutLogEntry], days_in
     exercise_summary_stats: list[ExerciseSummaryStats] = []
     for exercise_stat in exercise_stats:
         if len(exercise_stat.dates) < NUM_SAMPLES_REQUIRED:
-            logger.warning(f"Not enough data points to compute summary statistics for exercise: {exercise_stat.exercise}. Required: {NUM_SAMPLES_REQUIRED}, Found: {len(exercise_stat.dates)}")
+            logger.warning(
+                f"Not enough data points to compute summary statistics for exercise: {exercise_stat.exercise}. Required: {NUM_SAMPLES_REQUIRED}, Found: {len(exercise_stat.dates)}"
+            )
             continue
 
-        estimated_one_rep_max_progression_rate = compute_progression_rate(exercise_stat.dates, exercise_stat.estimated_one_rep_maxes)
-        estimated_one_rep_max_progression_consistency = compute_progression_consistency(exercise_stat.dates, exercise_stat.estimated_one_rep_maxes)
-        tonnage_progression_rate = compute_progression_rate(exercise_stat.dates, exercise_stat.tonnages)
-        tonnage_progression_consistency = compute_progression_consistency(exercise_stat.dates, exercise_stat.tonnages)
+        estimated_one_rep_max_progression_rate = compute_progression_rate(
+            exercise_stat.dates, exercise_stat.estimated_one_rep_maxes
+        )
+        estimated_one_rep_max_progression_consistency = compute_progression_consistency(
+            exercise_stat.dates, exercise_stat.estimated_one_rep_maxes
+        )
+        tonnage_progression_rate = compute_progression_rate(
+            exercise_stat.dates, exercise_stat.tonnages
+        )
+        tonnage_progression_consistency = compute_progression_consistency(
+            exercise_stat.dates, exercise_stat.tonnages
+        )
 
         exercise_summary_stats.append(
             ExerciseSummaryStats(

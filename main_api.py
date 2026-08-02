@@ -1,9 +1,10 @@
 """Run the Hercules FastAPI ASGI app with Uvicorn."""
 
-import uvicorn
-import os
 import logging
+import os
 import sys
+
+import uvicorn
 from dotenv import load_dotenv
 
 from hercules.vector_client import VectorStoreClient
@@ -26,7 +27,7 @@ vector_client = VectorStoreClient(
     host_url=QDRANT_HOST_URL,
     openai_api_key=OPENAI_API_KEY,
     embedding_model_name=OPENAI_EMBEDDING_MODEL,
-    collection_name=COLLECTION
+    collection_name=COLLECTION,
 )
 
 if __name__ == "__main__":

@@ -1,15 +1,14 @@
-from datetime import datetime
 import hashlib
 import io
 import logging
-from typing import Optional
+from datetime import datetime
 
 import dateparser
 import discord
-
-from hercules.client import HerculesBot
 from discord import app_commands
 from discord.ext import commands
+
+from hercules.client import HerculesBot
 
 
 class HerculesCog(commands.Cog):
@@ -69,8 +68,8 @@ class HerculesCog(commands.Cog):
         interaction: discord.Interaction,
         metric_name: str,
         metric_value: str,
-        unit: Optional[str],
-        date_of_measurement: Optional[str],
+        unit: str | None,
+        date_of_measurement: str | None,
     ):
         await interaction.response.defer()
 

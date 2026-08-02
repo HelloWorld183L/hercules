@@ -1,9 +1,8 @@
+import io
 import logging
 
 from matplotlib import pyplot as plt
-import io
-
-from strands.types.tools import ToolUse, ToolResult
+from strands.types.tools import ToolResult, ToolUse
 
 logger = logging.getLogger("hercules")
 
@@ -115,5 +114,5 @@ def create_volume_graph(tool: ToolUse, **kwargs) -> ToolResult:
         return {
             "toolUseId": tool_use_id,
             "status": "error",
-            "content": [{"text": f"Failed to create volume graph: {str(e)}"}],
+            "content": [{"text": f"Failed to create volume graph: {e!s}"}],
         }

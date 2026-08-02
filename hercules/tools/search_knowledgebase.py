@@ -1,5 +1,5 @@
 """
-Module for the search_knowledgebase tool, which allows the agent to search for relevant documents 
+Module for the search_knowledgebase tool, which allows the agent to search for relevant documents
 in the knowledge base using semantic similarity. This tool uses the vector_client to query the Qdrant
 vector database and retrieve relevant documents based on the input query. The results include the text,
 source, and relevance score of each document found in the knowledge base.
@@ -8,8 +8,9 @@ source, and relevance score of each document found in the knowledge base.
 import logging
 
 from dotenv import load_dotenv
+from strands.types.tools import ToolResult, ToolUse
+
 from main_api import vector_client
-from strands.types.tools import ToolUse, ToolResult
 
 logger = logging.getLogger("hercules")
 
@@ -36,6 +37,7 @@ TOOL_SPEC = {
     },
 }
 
+
 def search_knowledgebase(tool: ToolUse, **kwargs) -> ToolResult:
     """
     Search for relevant documents in the knowledge base.
@@ -56,19 +58,20 @@ def search_knowledgebase(tool: ToolUse, **kwargs) -> ToolResult:
 
         # Search Qdrant for relevant documents
         search_result = vector_client.search(
-            query=query,
-            limit=tool_input.get("limit_results", 5)
+            query=query, limit=tool_input.get("limit_results", 5)
         )
 
-        no_relevant_docs_found = (
-            not search_result or len(search_result.points) == 0
-        )
+        no_relevant_docs_found = not search_result or len(search_result.points) == 0
         if no_relevant_docs_found:
-            logger.info(f"No relevant documents found in the knowledge base. Search result: {search_result}")
+            logger.info(
+                f"No relevant documents found in the knowledge base. Search result: {search_result}"
+            )
             return {
                 "toolUseId": tool_use_id,
                 "status": "success",
-                "content": [{"text": "No relevant documents found in the knowledge base."}],
+                "content": [
+                    {"text": "No relevant documents found in the knowledge base."}
+                ],
             }
 
         logger.info(f"Knowledge base search successful. Search result: {search_result}")
@@ -109,11 +112,13 @@ def search_knowledgebase(tool: ToolUse, **kwargs) -> ToolResult:
                 payload = getattr(result, "payload", {}) or {}
                 score = getattr(result, "score", None)
 
-            formatted_results.append({
-                "text": payload.get("text", ""),
-                "source": payload.get("source", ""),
-                "score": score,
-            })
+            formatted_results.append(
+                {
+                    "text": payload.get("text", ""),
+                    "source": payload.get("source", ""),
+                    "score": score,
+                }
+            )
 
         logger.info(f"Knowledge base search results: {formatted_results}")
         return {
@@ -127,5 +132,7 @@ def search_knowledgebase(tool: ToolUse, **kwargs) -> ToolResult:
         return {
             "toolUseId": tool_use_id,
             "status": "error",
-            "content": [{"text": f"An error occurred during knowledge base search: {str(e)}"}],
+            "content": [
+                {"text": f"An error occurred during knowledge base search: {e!s}"}
+            ],
         }
