@@ -3,6 +3,7 @@ Module for building the Hercules vector store client and related utilities for
 embedding and ingesting documents into Qdrant.
 """
 
+import os
 from pathlib import Path
 
 import openai
@@ -10,8 +11,6 @@ from dotenv import load_dotenv
 from qdrant_client import QdrantClient
 from qdrant_client.conversions import common_types as types
 from qdrant_client.models import PointStruct, VectorParams
-
-load_dotenv()
 
 
 class VectorStoreClient:
@@ -111,3 +110,26 @@ class VectorStoreClient:
             )
             embeddings.extend([d.embedding for d in resp.data])
         return embeddings
+
+
+def get_vector_client() -> VectorStoreClient:
+    """Get a configured VectorStoreClient instance using environment variables."""
+    load_dotenv()
+
+    host_url = os.getenv("QDRANT_HOST_URL")
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    embedding_model_name = os.getenv("OPENAI_EMBEDDING_MODEL")
+    collection_name = os.getenv("COLLECTION_NAME")
+
+    if not all([host_url, openai_api_key, embedding_model_name, collection_name]):
+        raise RuntimeError(
+            "Environment variables QDRANT_HOST_URL, OPENAI_API_KEY, "
+            "OPENAI_EMBEDDING_MODEL, and COLLECTION_NAME must be set."
+        )
+
+    return VectorStoreClient(
+        host_url=host_url,
+        openai_api_key=openai_api_key,
+        embedding_model_name=embedding_model_name,
+        collection_name=collection_name,
+    )

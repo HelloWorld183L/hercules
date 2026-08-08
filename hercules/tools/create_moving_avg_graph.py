@@ -38,61 +38,61 @@ def create_moving_avg_graph(tool: ToolUse, **kwargs) -> ToolResult:
 
     The tool is expected to be used for visualizing trends in user metrics over time, such as tracking progress towards fitness goals. The graph can help users understand how their metrics are changing and identify any patterns or trends.
     """
-    try:
-        tool_use_id = tool["toolUseId"]
-        tool_input = tool["input"]
-        dates = tool_input["dates"]
-        metrics = tool_input["metrics"]
+    tool_use_id = tool["toolUseId"]
+    tool_input = tool["input"]
+    dates = tool_input["dates"]
+    metrics = tool_input["metrics"]
 
-        if not dates:
-            return {
-                "toolUseId": tool_use_id,
-                "status": "error",
-                "content": [{"text": "No dates provided for graph."}],
-            }
-        if not metrics:
-            return {
-                "toolUseId": tool_use_id,
-                "status": "error",
-                "content": [{"text": "No metrics provided for graph."}],
-            }
-
-        metric_numbers = [float(x.strip()) for x in metrics]
-        rolling_avg_metrics = _rolling_average(metric_numbers)
-
-        plt.figure(figsize=(12, 5))
-        plt.plot(dates, metric_numbers, label="Daily metric value")
-        plt.plot(dates, rolling_avg_metrics, label="7-day moving average")
-
-        plt.xlabel("Date")
-        plt.ylabel("Metric value")
-        plt.title("Moving Average Graph of metric value over time")
-        plt.tight_layout()
-
-        graph_bytes = io.BytesIO()
-        plt.savefig(graph_bytes, format="png")
-        graph_bytes.seek(0)
-        plt.close()
-
-        return {
-            "toolUseId": tool_use_id,
-            "status": "success",
-            "content": [
-                {
-                    "image": {
-                        "format": "png",
-                        "source": {"bytes": graph_bytes.getvalue()},
-                    }
-                }
-            ],
-        }
-    except Exception as e:
-        logger.exception(f"Error creating moving average graph: {e}")
+    if not dates:
         return {
             "toolUseId": tool_use_id,
             "status": "error",
-            "content": [{"text": f"Failed to create graph: {e!s}"}],
+            "content": [{"text": "No dates provided for graph."}],
         }
+    if not metrics:
+        return {
+            "toolUseId": tool_use_id,
+            "status": "error",
+            "content": [{"text": "No metrics provided for graph."}],
+        }
+
+    try:
+        metric_numbers = [float(x.strip()) for x in metrics]
+        rolling_avg_metrics = _rolling_average(metric_numbers)
+    except ValueError as ve:
+        logger.error(f"Error converting metrics to floats: {ve}")
+        return {
+            "toolUseId": tool_use_id,
+            "status": "error",
+            "content": [{"text": f"Invalid metric values provided: {ve}"}],
+        }
+
+    plt.figure(figsize=(12, 5))
+    plt.plot(dates, metric_numbers, label="Daily metric value")
+    plt.plot(dates, rolling_avg_metrics, label="7-day moving average")
+
+    plt.xlabel("Date")
+    plt.ylabel("Metric value")
+    plt.title("Moving Average Graph of metric value over time")
+    plt.tight_layout()
+
+    graph_bytes = io.BytesIO()
+    plt.savefig(graph_bytes, format="png")
+    graph_bytes.seek(0)
+    plt.close()
+
+    return {
+        "toolUseId": tool_use_id,
+        "status": "success",
+        "content": [
+            {
+                "image": {
+                    "format": "png",
+                    "source": {"bytes": graph_bytes.getvalue()},
+                }
+            }
+        ],
+    }
 
 
 def _rolling_average(data, window_size=7) -> list:

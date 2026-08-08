@@ -1,3 +1,7 @@
+"""
+Module for the Hercules Discord bot that interacts with the Hercules API server.
+"""
+
 import atexit
 import base64
 import hashlib
@@ -27,6 +31,7 @@ class HerculesBot(commands.Bot):
         api_url: str | None = None,
         default_workout_program_name: str = "workout_program.md",
         dev_guild_id: int | None = None,
+        api_timeout: float = 120.0,
         **kwargs,
     ):
         intents = Intents.default()
@@ -46,6 +51,7 @@ class HerculesBot(commands.Bot):
         atexit.register(shutil.rmtree, self.persistent_files_dir, ignore_errors=True)
 
         self._DISCORD_MSG_LIMIT = 2000
+        self._api_timeout = api_timeout
 
     async def on_ready(self):
         logger.info(f"Hercules is online as {self.user}")
@@ -73,6 +79,7 @@ class HerculesBot(commands.Bot):
         if message.author.bot:
             return
 
+        # Ignore messages that don't mention the bot or are not direct messages
         mentioned_or_dmed = self.user.mentioned_in(message) or isinstance(
             message.channel, DMChannel
         )
@@ -81,129 +88,126 @@ class HerculesBot(commands.Bot):
 
         await message.channel.typing()  # Show typing indicator while processing
 
+        # Get the message content, removing the bot mention if present
+        user_input = message.content.replace(f"<@{self.user.id}>", "").strip()
+        hashed_user_id = hashlib.sha256(str(message.author.id).encode()).hexdigest()
+
+        files = await self._collect_file_attachments(message)
+        # Call the Hercules API server's /invoke endpoint
         try:
-            agent_work_dir = tempfile.mkdtemp(prefix="hercules_agent_run_")
-            # Get the message content, removing the bot mention if present
-            user_input = message.content.replace(f"<@{self.user.id}>", "").strip()
-
-            # Prepare request to API server
-            hashed_user_id = str(message.author.id)
-
-            data = {"content": user_input, "user_id": hashed_user_id}
-
-            files = None
-            if message.attachments:
-                att = message.attachments[0]
-                content_type = att.content_type
-                if content_type and ";" in content_type:
-                    content_type = content_type.split(";")[0].strip()
-                    file_extension = MIME_TYPES.get(content_type, "ignore")
-                # If content_type is None, try to infer from filename
-                elif not content_type:
-                    file_extension = att.filename.split(".")[-1].lower()
-                    content_type = next(
-                        (k for k, v in MIME_TYPES.items() if v == file_extension),
-                        "application/octet-stream",
-                    )
-                    logger.warning(
-                        f"Attachment {att.filename} has no content type; inferred as {content_type} based on file extension."
-                    )
-                attachment_contents = await att.read()
-
-                # Store a persistent copy like before
-                if file_extension != "ignore":
-                    time_of_upload = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                    store_filename = f"{time_of_upload}_{hashlib.sha256(str(message.author.id).encode()).hexdigest()}_attachment.{file_extension}"
-                    store_temp_file_path = os.path.join(
-                        self.persistent_files_dir, store_filename
-                    )
-                    with open(store_temp_file_path, "wb") as f:
-                        f.write(attachment_contents)
-                    self._persistent_files.add(store_temp_file_path)
-                    # include as a file in the multipart/form-data
-                    files = {
-                        "file": (
-                            att.filename or store_filename,
-                            attachment_contents,
-                            content_type,
-                        )
-                    }
-                else:
-                    logger.warning(
-                        f"Attachment with content type {att.content_type} is not supported and will be ignored."
-                    )
-
-            # Call the Hercules API server's /invoke endpoint
-            try:
-                async with httpx.AsyncClient() as client:
-                    if files:
-                        resp = await client.post(
-                            f"{self.api_url}/invoke",
-                            data=data,
-                            files=files,
-                            timeout=120.0,
-                        )
-                    else:
-                        resp = await client.post(
-                            f"{self.api_url}/invoke", data=data, timeout=120.0
-                        )
-                    resp.raise_for_status()
-                    result = resp.json()
-
-                response_text = result.get("text", "")
-                image = result.get("image")
-
-                # If the API returned an image payload (base64), attach it
-                if image and image.get("data"):
-                    img_bytes = base64.b64decode(image["data"])
-                    img_type = image.get("format", "png")
-                    if len(response_text) < self._DISCORD_MSG_LIMIT:
-                        await message.reply(
-                            response_text,
-                            file=discord.File(
-                                io.BytesIO(img_bytes), filename=f"graph.{img_type}"
-                            ),
-                        )
-                    else:
-                        await message.reply(
-                            "The response is quite long and has hit the Discord limit, so I've put it into a markdown file instead.",
-                            file=discord.File(
-                                io.BytesIO(response_text.encode("utf-8")),
-                                filename="response.md",
-                            ),
-                        )
-                        await message.reply(
-                            "Graph generated.",
-                            file=discord.File(
-                                io.BytesIO(img_bytes), filename=f"graph.{img_type}"
-                            ),
-                        )
-
-                else:
-                    if len(response_text) > self._DISCORD_MSG_LIMIT:
-                        await message.reply(
-                            "The response is quite long and has hit the Discord limit, so I've put it into a markdown file instead.",
-                            file=discord.File(
-                                io.BytesIO(response_text.encode("utf-8")),
-                                filename="response.md",
-                            ),
-                        )
-                    else:
-                        await message.reply(response_text)
-
-            except Exception as e:
-                logger.exception(f"Error calling Hercules API: {e}")
-                await message.reply(
-                    "Hercules discord bot has failed when contacting API. Please contact the developer for support."
-                )
-
-        except Exception as e:
-            logger.exception(f"Error processing message: {e}")
+            result = await self._invoke_hercules_api(user_input, hashed_user_id, files)
+        except RuntimeError as e:
+            logger.error(f"Error calling Hercules API: {e}")
             await message.reply(
-                "Hercules discord bot has failed. Please contact the developer for support."
+                "Hercules API server is unreachable or returned an error. Please try again later."
+            )
+            return
+
+        response_text = result.get("text", "")
+        image = result.get("image")
+
+        if image and image.get("data"):
+            await self._reply_with_image(message, response_text, image)
+        elif self._is_long_response(response_text):
+            await self._reply_long_text(message, response_text)
+        else:
+            await message.reply(response_text)
+
+    def _is_long_response(self, text: str) -> bool:
+        return len(text) > self._DISCORD_MSG_LIMIT
+
+    async def _reply_long_text(self, message: Message, response_txt: str) -> None:
+        await message.reply(
+            "The response is quite long and has hit the Discord limit, so I've put it into a markdown file instead.",
+            file=discord.File(
+                io.BytesIO(response_txt.encode("utf-8")), filename="response.md"
+            ),
+        )
+
+    async def _reply_with_image(
+        self, message: Message, response_text: str, image_payload: dict[str, str]
+    ) -> None:
+        img_bytes = base64.b64decode(image_payload["data"])
+        img_type = image_payload.get("format", "png")
+        image_file = discord.File(io.BytesIO(img_bytes), filename=f"graph.{img_type}")
+
+        if self._is_long_response(response_text):
+            await self._reply_long_text(message, response_text)
+            await message.reply("Graph generated.", file=image_file)
+        else:
+            await message.reply(response_text, file=image_file)
+
+    async def _invoke_hercules_api(
+        self, user_input: str, hashed_user_id: str, files: dict
+    ) -> dict:
+        """
+        Invoke the Hercules API server's /invoke endpoint with the given user input and files.
+        Returns the JSON response from the API server.
+        """
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    f"{self.api_url}/invoke",
+                    data={"content": user_input, "user_id": hashed_user_id},
+                    files=files,
+                    timeout=self._api_timeout,
+                )
+                resp.raise_for_status()
+                return resp.json()
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
+            logger.error(f"Error calling Hercules API: {e}")
+            raise RuntimeError(
+                "Hercules API server is unreachable or returned an error. Please try again later."
+            ) from e
+
+    async def _collect_file_attachments(
+        self, message: Message
+    ) -> dict[str, tuple[str, bytes, str]]:
+        """
+        Collects file attachments from a Discord message and returns a list of tuples containing
+        the filename, file content as bytes, and the content type.
+        """
+
+        if not message.attachments:
+            return {}
+
+        att = message.attachments[0]
+        content_type = att.content_type
+        if content_type and ";" in content_type:
+            content_type = content_type.split(";")[0].strip()
+            file_extension = MIME_TYPES.get(content_type, "ignore")
+        # If content_type is None, try to infer from filename
+        elif not content_type:
+            file_extension = att.filename.split(".")[-1].lower()
+            content_type = next(
+                (k for k, v in MIME_TYPES.items() if v == file_extension),
+                "application/octet-stream",
+            )
+            logger.warning(
+                f"Attachment {att.filename} has no content type; inferred as {content_type} based on file extension."
             )
 
-        finally:
-            # Do NOT remove persistent files here; they live for the lifetime
-            # of the bot process so the agent can reference them across messages.
-            shutil.rmtree(agent_work_dir, ignore_errors=True)
+        if file_extension == "ignore":
+            logger.warning(
+                f"Attachment {att.filename} has unsupported content type {content_type}; ignoring."
+            )
+            return {}
+
+        attachment_contents = await att.read()
+        time_of_upload = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        store_filename = f"{time_of_upload}_{hashlib.sha256(str(message.author.id).encode()).hexdigest()}_attachment.{file_extension}"
+        store_temp_file_path = os.path.join(self.persistent_files_dir, store_filename)
+        with open(store_temp_file_path, "wb") as f:
+            f.write(attachment_contents)
+        self._persistent_files.add(store_temp_file_path)
+
+        # include as a file in the multipart/form-data
+        files = {
+            "file": (
+                att.filename or store_filename,
+                attachment_contents,
+                content_type,
+            )
+        }
+
+        return files

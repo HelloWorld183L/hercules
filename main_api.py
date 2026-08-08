@@ -7,7 +7,7 @@ import sys
 import uvicorn
 from dotenv import load_dotenv
 
-from hercules.vector_client import VectorStoreClient
+from hercules.vector_client import get_vector_client
 
 load_dotenv()
 
@@ -16,19 +16,7 @@ DISTANCE = "Cosine"
 
 KNOWLEDGE_BASE_DIR = os.path.join("knowledge-base", "knowledge")
 
-QDRANT_HOST_URL = os.getenv("QDRANT_HOST_URL")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL")
-
-if not OPENAI_API_KEY:
-    raise RuntimeError("OPENAI_API_KEY environment variable must be set for embeddings")
-
-vector_client = VectorStoreClient(
-    host_url=QDRANT_HOST_URL,
-    openai_api_key=OPENAI_API_KEY,
-    embedding_model_name=OPENAI_EMBEDDING_MODEL,
-    collection_name=COLLECTION,
-)
+vector_client = get_vector_client()
 
 if __name__ == "__main__":
     vector_client.create_collection(distance=DISTANCE)

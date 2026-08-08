@@ -10,6 +10,8 @@ from discord.ext import commands
 
 from hercules.client import HerculesBot
 
+logger = logging.getLogger("hercules")
+
 
 class HerculesCog(commands.Cog):
     def __init__(self, bot: HerculesBot):
@@ -51,7 +53,7 @@ class HerculesCog(commands.Cog):
             )
 
         except Exception as e:
-            logging.exception(f"Error in /create_program: {e}")
+            logger.exception(f"Error in /create_program: {e}")
             await interaction.followup.send(
                 "Hercules failed to create the program. Contact the developer."
             )

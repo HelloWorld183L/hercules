@@ -9,6 +9,7 @@ from strands.types.tools import ToolResult, ToolUse
 from hercules.parsers import WorkoutLogEntry, parse_fitnotes_csv, parse_fitnotes_db
 from hercules.workout_stats import (
     ExerciseSummaryStats,
+    WorkoutLogSummaryStats,
     compute_workoutlog_stats,
 )
 
@@ -171,6 +172,20 @@ def extract_workoutlog_stats(tool: ToolUse, **kwargs) -> ToolResult:
         ],
     }
 
+    output_dict = _add_workout_stat_caveats(
+        workout_stats, recent_bodyweight, output_dict
+    )
+    return output_dict
+
+
+def _add_workout_stat_caveats(
+    workout_stats: WorkoutLogSummaryStats, recent_bodyweight: float, output_dict: dict
+) -> dict:
+    """
+    Add caveats to the workout stats output if certain conditions are met.
+    For example, if `days_in_gym` is not provided, add a caveat about workout consistency not being computed.
+    If `recent_bodyweight` is not provided, add a caveat about bodyweight exercises using a weight of 1.0.
+    """
     if workout_stats.workout_consistency == -1:
         incomplete_consistency_msg = "Workout consistency has not been computed as `days_in_gym` was not provided."
         output_dict["content"][0]["text"] += f" {incomplete_consistency_msg}"
