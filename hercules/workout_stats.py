@@ -3,6 +3,7 @@
 import datetime
 import logging
 
+import numpy as np
 from pydantic import BaseModel
 from scipy import stats
 
@@ -58,7 +59,7 @@ class WorkoutLogSummaryStats(BaseModel):
 
 def compute_workoutlog_stats(
     workout_log_entries: list[WorkoutLogEntry],
-    days_in_gym: int | None = None,
+    days_in_gym: str | None = None,
     bodyweight: float | None = None,
 ) -> WorkoutLogSummaryStats:
     """Compute statistics from the workout log entries."""
@@ -69,6 +70,7 @@ def compute_workoutlog_stats(
     if days_in_gym is None:
         workout_consistency = -1  # Indicate that workout consistency was not computed
     else:
+        days_in_gym = int(days_in_gym)
         if days_in_gym and (days_in_gym < 1 or days_in_gym > 7):
             raise ValueError("`days_in_gym` must be between 1 and 7 when provided.")
 
@@ -97,6 +99,14 @@ def compute_workoutlog_stats(
                 exercise_stat.dates, exercise_stat.estimated_one_rep_maxes
             )
         )
+
+        # Skip exercises with faulty data (not enough samples?)
+        if np.isnan(estimated_one_rep_max_progression_consistency):
+            logger.warning(
+                f"Kendall's tau correlation coefficient returned NaN for exercise: {exercise_stat.exercise}. Skipping."
+            )
+            continue
+
         tonnage_progression_rate = _compute_progression_rate(
             exercise_stat.dates, exercise_stat.tonnages
         )

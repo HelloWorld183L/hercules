@@ -4,7 +4,6 @@ Module for the Hercules Discord bot that interacts with the Hercules API server.
 
 import atexit
 import base64
-import hashlib
 import io
 import logging
 import os
@@ -19,6 +18,7 @@ from discord.ext import commands
 from strands import Agent
 
 from hercules.mime_types import MIME_TYPES
+from hercules.tools.helpers import hash_user_id
 
 logger = logging.getLogger("hercules")
 
@@ -57,13 +57,6 @@ class HerculesBot(commands.Bot):
         logger.info(f"Hercules is online as {self.user}")
 
     async def setup_hook(self) -> None:
-        # Cogs MUST be loaded before command trees are synced
-        for filename in os.listdir(os.path.join(os.path.dirname(__file__), "cogs")):
-            if filename.endswith(".py"):
-                await self.load_extension(name=f"hercules.cogs.{filename[:-3]}")
-
-        logger.info("Cogs loaded")
-
         if self._dev_guild_id:
             guild = discord.Object(id=self._dev_guild_id)
             self.tree.copy_global_to(guild=guild)
@@ -90,9 +83,26 @@ class HerculesBot(commands.Bot):
 
         # Get the message content, removing the bot mention if present
         user_input = message.content.replace(f"<@{self.user.id}>", "").strip()
-        hashed_user_id = hashlib.sha256(str(message.author.id).encode()).hexdigest()
+        hashed_user_id = hash_user_id(message.author.id)
 
-        files = await self._collect_file_attachments(message)
+        if not message.attachments:
+            files = {}
+        else:
+            att = message.attachments[0]
+            content_type, file_extension = self._get_content_type_and_extension(att)
+            if not content_type:
+                files = {}
+            else:
+                # Separate reading attachment contents to avoid blocking the event loop for too long
+                attachment_contents = await att.read()
+                files = self._collect_file_attachments(
+                    message,
+                    content_type,
+                    file_extension,
+                    att.filename,
+                    attachment_contents,
+                )
+
         # Call the Hercules API server's /invoke endpoint
         try:
             result = await self._invoke_hercules_api(user_input, hashed_user_id, files)
@@ -105,7 +115,6 @@ class HerculesBot(commands.Bot):
 
         response_text = result.get("text", "")
         image = result.get("image")
-
         if image and image.get("data"):
             await self._reply_with_image(message, response_text, image)
         elif self._is_long_response(response_text):
@@ -160,42 +169,50 @@ class HerculesBot(commands.Bot):
                 "Hercules API server is unreachable or returned an error. Please try again later."
             ) from e
 
-    async def _collect_file_attachments(
-        self, message: Message
+    def _get_content_type_and_extension(
+        self, attachment: discord.Attachment
+    ) -> tuple[str, str]:
+        """
+        Determine the content type and file extension for a Discord attachment.
+        If the content type is not provided, infer it from the filename.
+        """
+        content_type = attachment.content_type
+        if content_type and ";" in content_type:
+            content_type = content_type.split(";")[0].strip()
+            file_extension = MIME_TYPES.get(content_type, "ignore")
+        elif not content_type:
+            file_extension = attachment.filename.split(".")[-1].lower()
+            content_type = next(
+                (k for k, v in MIME_TYPES.items() if v == file_extension),
+                "application/octet-stream",
+            )
+            logger.warning(
+                f"Attachment {attachment.filename} has no content type; inferred as {content_type} based on file extension."
+            )
+
+        if file_extension == "ignore":
+            logger.warning(
+                f"Attachment {attachment.filename} has unsupported content type {content_type}; ignoring."
+            )
+            return None, None
+
+        return content_type, file_extension
+
+    def _collect_file_attachments(
+        self,
+        message: Message,
+        content_type: str,
+        file_extension: str,
+        att_filename: str,
+        attachment_contents: bytes,
     ) -> dict[str, tuple[str, bytes, str]]:
         """
         Collects file attachments from a Discord message and returns a list of tuples containing
         the filename, file content as bytes, and the content type.
         """
 
-        if not message.attachments:
-            return {}
-
-        att = message.attachments[0]
-        content_type = att.content_type
-        if content_type and ";" in content_type:
-            content_type = content_type.split(";")[0].strip()
-            file_extension = MIME_TYPES.get(content_type, "ignore")
-        # If content_type is None, try to infer from filename
-        elif not content_type:
-            file_extension = att.filename.split(".")[-1].lower()
-            content_type = next(
-                (k for k, v in MIME_TYPES.items() if v == file_extension),
-                "application/octet-stream",
-            )
-            logger.warning(
-                f"Attachment {att.filename} has no content type; inferred as {content_type} based on file extension."
-            )
-
-        if file_extension == "ignore":
-            logger.warning(
-                f"Attachment {att.filename} has unsupported content type {content_type}; ignoring."
-            )
-            return {}
-
-        attachment_contents = await att.read()
         time_of_upload = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        store_filename = f"{time_of_upload}_{hashlib.sha256(str(message.author.id).encode()).hexdigest()}_attachment.{file_extension}"
+        store_filename = f"{time_of_upload}_{hash_user_id(message.author.id)}_attachment.{file_extension}"
         store_temp_file_path = os.path.join(self.persistent_files_dir, store_filename)
         with open(store_temp_file_path, "wb") as f:
             f.write(attachment_contents)
@@ -204,7 +221,7 @@ class HerculesBot(commands.Bot):
         # include as a file in the multipart/form-data
         files = {
             "file": (
-                att.filename or store_filename,
+                att_filename or store_filename,
                 attachment_contents,
                 content_type,
             )

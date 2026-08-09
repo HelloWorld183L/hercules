@@ -2,12 +2,18 @@
 Module for any generic tool helpers
 """
 
+import hashlib
 import logging
 import re
 
 logger = logging.getLogger("hercules")
 
 URL_RE = re.compile(r"https?://[^\s,;\)\]\}'\"]+")
+
+
+def hash_user_id(user_id: str | int) -> str:
+    """Return a SHA-256 hash for the given user identifier."""
+    return hashlib.sha256(str(user_id).encode()).hexdigest()
 
 
 def extract_urls_from_rows(rows: list, max_urls_per_sheet: int) -> list[str]:

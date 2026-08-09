@@ -28,7 +28,7 @@ TOOL_SPEC = {
     The workout log can be filtered according to `start_datetime` and `end_datetime` to focus on a specific time range of interest.
     These could be exported workout logs from FitNotes or other fitness tracking apps. 
     The function computes summary statistics such as estimated one rep max progression (consistency + progression rate), tonnage progression, and workout consistency.
-    Returns workout log statistics for any exercises with sufficient data points. Make sure to include consistency and progression rate statistics.
+    Returns workout log statistics for any exercises with sufficient data points. Make sure to include consistency and progression rate statistics. Include percentages for the exercise summary stats except workout consistency.
     """,
     "inputSchema": {
         "json": {
@@ -87,7 +87,7 @@ def extract_workoutlog_stats(tool: ToolUse, **kwargs) -> ToolResult:
     inferred_file_type = tool_input["inferred_file_type"]
     start_datetime = tool_input.get("start_datetime")
     end_datetime = tool_input.get("end_datetime")
-    days_in_gym = int(tool_input.get("days_in_gym"))
+    days_in_gym = tool_input.get("days_in_gym")
     recent_bodyweight = tool_input.get("recent_bodyweight")
 
     is_valid, error_message = _validate_tool_input(tool_input)
@@ -240,33 +240,33 @@ def _filter_workoutlog_entries_by_date_range(
     """
     Filter the workout log entries to only include entries within the specified date range.
     """
+    if not start_datetime and not end_datetime:
+        return "", workout_log_entries
+
     date_range_str = ""
-    if start_datetime and end_datetime:
-        original_len = len(workout_log_entries)
+    original_len = len(workout_log_entries)
 
-        start_datetime = start_datetime.strip()
-        end_datetime = end_datetime.strip()
+    start_datetime = start_datetime.strip()
+    end_datetime = end_datetime.strip()
 
-        start_datetime = datetime.datetime.fromisoformat(start_datetime)
-        end_datetime = datetime.datetime.fromisoformat(end_datetime)
+    start_datetime = datetime.datetime.fromisoformat(start_datetime)
+    end_datetime = datetime.datetime.fromisoformat(end_datetime)
 
-        if start_datetime > end_datetime:
-            raise ValueError(
-                f"Invalid date range: start_datetime {start_datetime} is after end_datetime {end_datetime}."
-            )
-
-        filtered_workout_log_entries = [
-            entry
-            for entry in workout_log_entries
-            if start_datetime <= entry.date <= end_datetime
-        ]
-        filtered_len = len(filtered_workout_log_entries)
-
-        date_range_str = (
-            f"from {start_datetime.isoformat()} to {end_datetime.isoformat()}"
-        )
-        logger.info(
-            f"Filtered workout log entries from {original_len} to {filtered_len} entries {date_range_str}"
+    if start_datetime > end_datetime:
+        raise ValueError(
+            f"Invalid date range: start_datetime {start_datetime} is after end_datetime {end_datetime}."
         )
 
-        return date_range_str, filtered_workout_log_entries
+    filtered_workout_log_entries = [
+        entry
+        for entry in workout_log_entries
+        if start_datetime <= entry.date <= end_datetime
+    ]
+    filtered_len = len(filtered_workout_log_entries)
+
+    date_range_str = f"from {start_datetime.isoformat()} to {end_datetime.isoformat()}"
+    logger.info(
+        f"Filtered workout log entries from {original_len} to {filtered_len} entries {date_range_str}"
+    )
+
+    return date_range_str, filtered_workout_log_entries

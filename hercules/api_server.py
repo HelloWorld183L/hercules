@@ -4,6 +4,7 @@ import logging
 import os
 import tempfile
 
+import strands
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from strands.types.content import Message
@@ -45,15 +46,15 @@ def _store_upload(upload: UploadFile) -> str | None:
 
 
 def _build_context_input(
-    user_id: str | None, content: str, file_path: str | None
+    user_id: str | None, content: str, file: UploadFile | None
 ) -> str:
     """Build the context input string for the agent."""
     hashed_user_id = (
         hashlib.sha256(user_id.encode()).hexdigest() if user_id else "unknown"
     )
     context_input = f"[user_id: {hashed_user_id}], [user_input: {content}]"
-    if file_path:
-        stored_path = _store_upload(file_path)
+    if file:
+        stored_path = _store_upload(file)
         if stored_path:
             _, ext = os.path.splitext(stored_path)
             ext = ext.lstrip(".")
@@ -108,11 +109,11 @@ async def invoke(
             # No image payload if the message is just a plain text response
             image_payload = None
 
-        payload = {"text": response_text}
-        if image_payload:
-            payload["image"] = image_payload
-
-        return JSONResponse(content=payload)
-
-    except Exception as e:
+    except (KeyError, ValueError, strands.types.exceptions.EventLoopException) as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    payload = {"text": response_text}
+    if image_payload:
+        payload["image"] = image_payload
+
+    return JSONResponse(content=payload)
