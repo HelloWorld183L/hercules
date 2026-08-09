@@ -34,4 +34,4 @@ jobs:
     - name: Lint with ruff
       run: |
         uv run ruff check
-        uv run ruff formatd
+        uv run ruff format
