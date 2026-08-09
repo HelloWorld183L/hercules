@@ -33,6 +33,5 @@ jobs:
       run: uv run pytest tests
     - name: Lint with ruff
       run: |
-        # stop the build if there are Python syntax errors or undefined names
-      uv run ruff check
-      uv run ruff formatd
+        uv run ruff check
+        uv run ruff formatd
