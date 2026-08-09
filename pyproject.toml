@@ -17,6 +17,8 @@ dependencies = [
     "httpx>=0.24.0",
     "strands-valkey-session-manager>=0.1.0",
     "scipy>=1.18.0",
+    "pytest>=9.1.1",
+    "ruff>=0.16.2",
 ]
 
 [build-system]
