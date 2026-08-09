@@ -67,6 +67,56 @@ def test_extract_workoutlog_stats_rejects_unsupported_file_type(
     assert "Unsupported workout log format" in result["content"][0]["text"]
 
 
+def test_extract_workoutlog_stats_does_not_filter_entries_when_date_bounds_are_missing(
+    workout_log_csv: Path,
+) -> None:
+    payload = {
+        "toolUseId": "test-tool-use",
+        "input": {
+            "log_file_path": str(workout_log_csv),
+            "inferred_file_type": "fitnotes_csv",
+            "days_in_gym": 2,
+        },
+    }
+
+    result = extract_workoutlog_stats(payload)
+
+    assert result["status"] == "success"
+    assert result["content"][1]["json"]["workout_consistency"] == 100
+
+    exercise_summary_stats = json.loads(
+        result["content"][1]["json"]["exercise_summary_stats"]
+    )
+    assert len(exercise_summary_stats) == 1
+    assert exercise_summary_stats[0]["exercise"] == "Squat"
+
+
+def test_extract_workoutlog_stats_does_not_filter_entries_when_date_bounds_are_empty_strings(
+    workout_log_csv: Path,
+) -> None:
+    payload = {
+        "toolUseId": "test-tool-use",
+        "input": {
+            "log_file_path": str(workout_log_csv),
+            "inferred_file_type": "fitnotes_csv",
+            "start_datetime": "",
+            "end_datetime": "",
+            "days_in_gym": 2,
+        },
+    }
+
+    result = extract_workoutlog_stats(payload)
+
+    assert result["status"] == "success"
+    assert result["content"][1]["json"]["workout_consistency"] == 100
+
+    exercise_summary_stats = json.loads(
+        result["content"][1]["json"]["exercise_summary_stats"]
+    )
+    assert len(exercise_summary_stats) == 1
+    assert exercise_summary_stats[0]["exercise"] == "Squat"
+
+
 def test_extract_workoutlog_stats_rejects_invalid_days_in_gym(
     workout_log_csv: Path,
 ) -> None:
