@@ -81,7 +81,9 @@ def compute_workoutlog_stats(
     logger.info(f"Workout consistency computed: {workout_consistency}")
 
     exercise_stats = _compute_exercise_stat_entries(workout_log_entries, bodyweight)
-    logger.info(f"Exercise stats computed for each exercise: {exercise_stats}")
+    logger.info(
+        f"Exercise stats has been computed for each exercise with a bodyweight: {bodyweight}"
+    )
 
     exercise_summary_stats: list[ExerciseSummaryStats] = []
     for exercise_stat in exercise_stats:
@@ -123,8 +125,6 @@ def compute_workoutlog_stats(
                 tonnage_progression_consistency=tonnage_progression_consistency,
             )
         )
-
-    logger.info(f"Exercise summary statistics computed: {exercise_summary_stats}")
 
     return WorkoutLogSummaryStats(
         exercise_summary_stats=exercise_summary_stats,
@@ -178,9 +178,6 @@ def _compute_exercise_stat_entries(
     for entry in workout_log_entries:
         exercise_stats_dict.setdefault(entry.exercise, []).append(entry)
 
-    logger.info(
-        f"Exercise stats dictionary constructed for computing summary statistics: {exercise_stats_dict}"
-    )
     exercise_stats: list[ExerciseStatsEntry] = []
     for exercise, entries in exercise_stats_dict.items():
         fixed_entries = _fix_bodyweight_entries(entries, bodyweight)

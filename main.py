@@ -36,6 +36,8 @@ async def main():
             "HERCULES_API_URL environment variable must be set to the URL of the running Hercules API server (e.g. http://localhost:8000)"
         )
 
+    discord_bot_timeout = float(os.getenv("DISCORD_BOT_TIMEOUT", "180"))
+
     # Ensure loggers exist
     setup_loggers()
 
@@ -44,6 +46,7 @@ async def main():
         api_url=api_url,
         default_workout_program_name=DEFAULT_WORKOUT_PROGRAM_NAME,
         dev_guild_id=dev_guild_id,
+        timeout=discord_bot_timeout,
     ) as bot:
         await bot.start(token)
 

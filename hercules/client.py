@@ -31,7 +31,7 @@ class HerculesBot(commands.Bot):
         api_url: str | None = None,
         default_workout_program_name: str = "workout_program.md",
         dev_guild_id: int | None = None,
-        api_timeout: float = 120.0,
+        api_timeout: float = 180.0,
         **kwargs,
     ):
         intents = Intents.default()
