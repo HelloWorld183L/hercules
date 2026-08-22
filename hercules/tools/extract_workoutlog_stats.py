@@ -240,7 +240,8 @@ def _filter_workoutlog_entries_by_date_range(
     """
     Filter the workout log entries to only include entries within the specified date range.
     """
-    if not start_datetime and not end_datetime:
+    # TODO: Add ability to filter without having to include both datetime options
+    if not start_datetime or not end_datetime:
         return "", workout_log_entries
 
     date_range_str = ""
@@ -260,7 +261,10 @@ def _filter_workoutlog_entries_by_date_range(
     filtered_workout_log_entries = [
         entry
         for entry in workout_log_entries
-        if start_datetime <= entry.date <= end_datetime
+        # Convert to UTC to avoid issues with comparing offset-naive vs offset-aware datetimes
+        if start_datetime.astimezone(datetime.UTC)
+        <= entry.date.astimezone(datetime.UTC)
+        <= end_datetime.astimezone(datetime.UTC)
     ]
     filtered_len = len(filtered_workout_log_entries)
 
