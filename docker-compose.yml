@@ -64,6 +64,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - 6380:6379
 
 volumes:
   valkey_data:
