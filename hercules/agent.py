@@ -36,25 +36,24 @@ def build_agent(
 ) -> Agent:
     load_dotenv()
 
+    strands_model_id = os.getenv("STRANDS_MODEL_ID")
+    if not strands_model_id:
+        raise RuntimeError("STRANDS_MODEL_ID environment variable not set")
+
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise RuntimeError("OPENAI_API_KEY environment variable not set")
+
     max_result_tokens = int(os.getenv("MAX_RESULT_TOKENS", "2000"))
     preview_tokens = int(os.getenv("PREVIEW_TOKENS", "750"))
     context_window_limit = int(os.getenv("CONTEXT_WINDOW_LIMMIT", "30000"))
     window_size = int(os.getenv("WINDOW_SIZE", "10"))
 
-    if model is None:
-        strands_model_id = os.getenv("STRANDS_MODEL_ID")
-        if not strands_model_id:
-            raise RuntimeError("STRANDS_MODEL_ID environment variable not set")
-
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
-            raise RuntimeError("OPENAI_API_KEY environment variable not set")
-
-        model = OpenAIModel(
-            client_args={"api_key": openai_api_key},
-            model_id=strands_model_id,
-            context_window_limit=context_window_limit,
-        )
+    model = OpenAIModel(
+        client_args={"api_key": openai_api_key},
+        model_id=strands_model_id,
+        context_window_limit=context_window_limit,
+    )
 
     skills_plugin = AgentSkills(
         skills=os.path.join(os.path.dirname(__file__), "skills")
