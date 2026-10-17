@@ -1,0 +1,50 @@
+[
+	{
+		"name": "workout-1",
+		"input": "Extract workout log stats from the tests/test_data/noob_workoutlog.csv file.",
+		"expected_trajectory": ["extract_workoutlog_stats", "retrieve_offloaded_content"],
+		"metadata": {"category": "workout", "expected_tools": ["extract_workoutlog_stats", "retrieve_offloaded_content"]}
+	},
+	{
+		"name": "excel-1",
+		"input": "Describe the Excel workbook located at tests/test_data/workbook.xlsx.",
+		"expected_trajectory": ["describe_excel_workbook"],
+		"metadata": {"category": "excel", "expected_tools": ["describe_excel_workbook"]}
+	},
+	{
+		"name": "volume-graph-1",
+		"input": " Create a volume graph for the following data: muscle_groups = ['Chest', 'Back'], volumes = [10, 20]",
+		"expected_trajectory": ["create_volume_graph"],
+		"metadata": {"category": "graph", "expected_tools": ["create_volume_graph"]}
+	},
+	{
+		"name": "moving-avg-graph-1",
+		"input": "Create a moving average graph for the following data: dates = ['2023-01-01', '2023-01-02'], values = [100, 200]",
+		"expected_trajectory": ["create_moving_avg_graph"],
+		"metadata": {"category": "graph", "expected_tools": ["create_moving_avg_graph"]}
+	},
+	{
+		"name": "query-sheet-1",
+		"input": "Query the following sheet located at tests/test_data/workbook.xlsx for the data in 'boop' sheet.",
+		"expected_trajectory": ["describe_excel_workbook", "query_sheet"],
+		"metadata": {"category": "sheet", "expected_tools": ["describe_excel_workbook", "query_sheet"]}
+	},
+	{
+		"name": "file-read-1",
+		"input": "Read the contents of tests/test_data/test_program.md using view mode.",
+		"expected_trajectory": ["file_read"],
+		"metadata": {"category": "file", "expected_tools": ["file_read"]}
+	},
+	{
+		"name": "search-knowledgebase-1",
+		"input": "What is 'Dynamic Double Progression'?",
+		"expected_trajectory": ["search_knowledgebase"],
+		"metadata": {"category": "search", "expected_tools": ["search_knowledgebase"]}
+	},
+	{
+		"name": "tavily-search-1",
+		"input": "What is the difference between Eric Helm's viewpoint on optimal training volumes versus Mike Mentzer's viewpoint on training volume?",
+		"expected_trajectory": ["search_knowledgebase", "tavily_search", "tavily_extract"],
+		"metadata": {"category": "search", "expected_tools": ["tavily_search", "search_knowledgebase"]}
+	}
+]

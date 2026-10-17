@@ -1,0 +1,30 @@
+[
+    {
+        "name": "search-knowledgebase-network-error",
+        "input": "What is 'Dynamic Double Progression'?",
+        "effects": {
+            "tool_effects": {
+                "search_knowledgebase": [
+                    {
+                        "effect_type": "network_error",
+                        "error_message": "The search_knowledgebase tool timed out while processing the request."
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "name": "tavily-search-network-error",
+        "input": "What is the difference between Eric Helm's viewpoint on optimal training volumes versus Mike Mentzer's viewpoint on training volume?",
+        "effects": {
+            "tool_effects": {
+                "tavily_search": [
+                    {
+                        "effect_type": "network_error",
+                        "error_message": "The tavily_search tool encountered a network error while trying to fetch data."
+                    }
+                ]
+            }
+        }
+    }
+]

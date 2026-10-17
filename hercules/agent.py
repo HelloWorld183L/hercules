@@ -1,16 +1,20 @@
 """Module for building the Hercules agent."""
 
 import os
+from collections.abc import Mapping, Sequence
 from uuid import uuid4
 
 import valkey
 from dotenv import load_dotenv
+from mem0_strands import Mem0MemoryStore
 from strands import Agent, AgentSkills
 from strands.agent import SlidingWindowConversationManager
+from strands.memory import MemoryManager
 from strands.models.openai import OpenAIModel
+from strands.plugins import Plugin
 from strands.storage import LocalFileStorage
 from strands.vended_plugins.context_offloader import ContextOffloader
-from strands_tools import calculator, current_time, file_read, mem0_memory
+from strands_tools import file_read
 from strands_tools.tavily import tavily_extract, tavily_search
 from strands_valkey_session_manager import ValkeySessionManager
 
@@ -24,27 +28,33 @@ from hercules.tools import (
 )
 
 
-def build_agent() -> Agent:
+def build_agent(
+    *,
+    model: OpenAIModel | None = None,
+    extra_plugins: Sequence[Plugin] = (),
+    trace_attributes: Mapping[str, str] | None = None,
+) -> Agent:
     load_dotenv()
-
-    strands_model_id = os.getenv("STRANDS_MODEL_ID")
-    if not strands_model_id:
-        raise RuntimeError("STRANDS_MODEL_ID environment variable not set")
-
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        raise RuntimeError("OPENAI_API_KEY environment variable not set")
 
     max_result_tokens = int(os.getenv("MAX_RESULT_TOKENS", "2000"))
     preview_tokens = int(os.getenv("PREVIEW_TOKENS", "750"))
     context_window_limit = int(os.getenv("CONTEXT_WINDOW_LIMMIT", "30000"))
     window_size = int(os.getenv("WINDOW_SIZE", "10"))
 
-    model = OpenAIModel(
-        client_args={"api_key": openai_api_key},
-        model_id=strands_model_id,
-        context_window_limit=context_window_limit,
-    )
+    if model is None:
+        strands_model_id = os.getenv("STRANDS_MODEL_ID")
+        if not strands_model_id:
+            raise RuntimeError("STRANDS_MODEL_ID environment variable not set")
+
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if not openai_api_key:
+            raise RuntimeError("OPENAI_API_KEY environment variable not set")
+
+        model = OpenAIModel(
+            client_args={"api_key": openai_api_key},
+            model_id=strands_model_id,
+            context_window_limit=context_window_limit,
+        )
 
     skills_plugin = AgentSkills(
         skills=os.path.join(os.path.dirname(__file__), "skills")
@@ -85,14 +95,16 @@ def build_agent() -> Agent:
         window_size=window_size
     )
     agent_id = str(uuid4())
-    mem0_tool = mem0_memory.Mem0MemoryTool(agent_id=agent_id)
+
+    # Should default to MEM0_API_KEY
+    store = Mem0MemoryStore(agent_id=agent_id, extraction=True)
     agent = Agent(
         agent_id=agent_id,
         model=model,
+        memory_manager=MemoryManager(
+            stores=[store],
+        ),
         tools=[
-            calculator,
-            current_time,
-            mem0_tool.mem0_memory,
             create_moving_avg_graph,
             describe_excel_workbook,
             query_sheet,
@@ -103,10 +115,11 @@ def build_agent() -> Agent:
             file_read,
             search_knowledgebase,
         ],
-        plugins=[skills_plugin, context_offloader],
+        plugins=[skills_plugin, context_offloader, *extra_plugins],
         system_prompt=system_prompt,
         session_manager=session_manager,
         conversation_manager=conversation_manager,
+        trace_attributes=trace_attributes,
     )
 
     return agent
