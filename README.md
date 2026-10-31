@@ -101,23 +101,48 @@ uv sync
 Start the backing services:
 
 ```bash
-docker compose up -d valkey qdrant
+docker compose up -d
 ```
 
-In one terminal, start the API. It initializes the Qdrant collection and indexes the knowledge-base files before serving requests:
+## Run Evaluations with Docker Compose
+
+The evaluation scripts are in `tests/evals/`. They call the configured Hercules model and will use Mem0, Valkey, and Qdrant in various evals, so configure the API/model and service credentials in `.env` as described above. Build the application image and start the backing services:
 
 ```bash
-python main_api.py
+docker compose up -d 
 ```
 
-In a second terminal, activate the same virtual environment and start the bot:
+You can then run a specific eval script:
 
 ```bash
-source .venv/bin/activate
-python main.py
+python tests/evals/tool_evals.py
 ```
 
-For host-run processes, set `HERCULES_API_URL=http://localhost:8000` in `.env`; unlike the Compose bot, a locally run bot does not receive this setting automatically.
+Reports are written under `tests/evals/experiment_reports/`. When finished, stop the backing services with `docker compose down` (this keeps their data volumes).
+
+### Red-Team Evaluation
+
+The red-team evaluation needs **two models**: the target model configured with `STRANDS_MODEL_ID` in `.env`, and a separate **abliterated Ollama model** used as the adversarial attacker. An abliterated attacker model is required for this evaluation; it is not the Hercules target model. The development Compose file provides an Ollama service and pulls an abliterated Qwen3 8B model. Allow enough disk space and GPU memory for this model.
+
+Start the backing services and the development Ollama services:
+
+```bash
+docker compose -f docker-compose-dev.yml up -d
+```
+
+Wait for `ollama-model-pull` to finish successfully before running the evaluation:
+
+Then run:
+
+```bash
+python tests/evals/red_team_evals.py
+```
+
+Stop the services when finished:
+
+```bash
+docker compose -f docker-compose-dev.yml down
+```
 
 ## Troubleshooting
 
