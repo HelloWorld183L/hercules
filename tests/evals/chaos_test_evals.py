@@ -23,14 +23,6 @@ from strands_evals.evaluators.chaos import (
 from hercules.agent import build_agent
 
 
-def extract_effect_maps(chaos_cases: list[ChaosCase]) -> dict[str, dict[str, str]]:
-    """
-    Extracts a mapping of effect names to their types and descriptions from a list of ChaosCase instances.
-    This function is useful for creating a reference of effects that can be used in evaluations.
-    """
-    return {case.name: case.effects for case in chaos_cases}
-
-
 def create_task_function(sample_agent: Agent):
     @eval_task(TracedHandler())
     def task_function(case: ChaosCase) -> Agent:
