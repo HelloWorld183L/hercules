@@ -916,7 +916,7 @@ dependencies = [
     { name = "ruff" },
     { name = "scipy" },
     { name = "seaborn" },
-    { name = "strands-agents", extra = ["openai"] },
+    { name = "strands-agents", extra = ["ollama", "openai"] },
     { name = "strands-agents-evals" },
     { name = "strands-valkey-session-manager" },
     { name = "uvicorn", extra = ["standard"] },
@@ -935,7 +935,7 @@ requires-dist = [
     { name = "ruff", specifier = ">=0.16.2" },
     { name = "scipy", specifier = ">=1.18.0" },
     { name = "seaborn", specifier = ">=0.13.2" },
-    { name = "strands-agents", extras = ["openai"], specifier = ">=1.35.0" },
+    { name = "strands-agents", extras = ["ollama", "openai"], specifier = ">=1.35.0" },
     { name = "strands-agents-evals", specifier = ">=1.2.0" },
     { name = "strands-valkey-session-manager", specifier = ">=0.1.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.22.0" },
@@ -1569,6 +1569,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/42/06/6e11443f7b64ee376c860506091103bf68f92d2cab9e8d96d4501babf07c/numpy-2.5.2-cp315-cp315t-win32.whl", hash = "sha256:7354826bc6f8f69402e9b7fe28d15fcd34feebd74f856f111585c5b0c9fb0251", size = 6269775, upload-time = "2026-08-09T13:48:17.543Z" },
     { url = "https://files.pythonhosted.org/packages/f1/18/195d6b86cd72dbbc501edfa778005fa6b87afd34c153e46028cd3a0938f4/numpy-2.5.2-cp315-cp315t-win_amd64.whl", hash = "sha256:e5651f3f87add730ee6608d915009e19c911fba0cb000c7e3ea994b7d768eb12", size = 12782559, upload-time = "2026-08-09T13:48:21.023Z" },
     { url = "https://files.pythonhosted.org/packages/b4/07/458c344f0f0c178f4481dad5cca790626ffe4c34eabf9467069d06ee4999/numpy-2.5.2-cp315-cp315t-win_arm64.whl", hash = "sha256:5f8e00be2ec6f45f4e8a41a527f68d44a7d96fee92a650e4d8b1326f77f61e6e", size = 10748103, upload-time = "2026-08-09T13:48:24.21Z" },
+]
+
+[[package]]
+name = "ollama"
+version = "0.6.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b8/97/eeafe65594e4f4b25e443e068ef7d83aa3105b023e12e1c408c38669fc07/ollama-0.6.3.tar.gz", hash = "sha256:41fc49a8095c4a75939c4c1f8582e4d0671692fb6eac2a5a7ede8c9872b67096", size = 56868, upload-time = "2026-09-29T01:26:51.906Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4d/64/87505d9e006461233c21c8e66dc1ecee49c996090584b216abd0dd4a8322/ollama-0.6.3-py3-none-any.whl", hash = "sha256:6a20bc42c1a5f889295d7ec490d35e5132fc31f339561530f43a8abd4dbfe508", size = 16603, upload-time = "2026-09-29T01:26:50.451Z" },
 ]
 
 [[package]]
@@ -2355,15 +2368,15 @@ wheels = [
 
 [[package]]
 name = "rich"
-version = "14.3.4"
+version = "15.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markdown-it-py" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e9/67/cae617f1351490c25a4b8ac3b8b63a4dda609295d8222bad12242dfdc629/rich-14.3.4.tar.gz", hash = "sha256:817e02727f2b25b40ef56f5aa2217f400c8489f79ca8f46ea2b70dd5e14558a9", size = 230524, upload-time = "2026-04-11T02:57:45.419Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c0/8f/0722ca900cc807c13a6a0c696dacf35430f72e0ec571c4275d2371fca3e9/rich-15.0.0.tar.gz", hash = "sha256:edd07a4824c6b40189fb7ac9bc4c52536e9780fbbfbddf6f1e2502c31b068c36", size = 230680, upload-time = "2026-04-12T08:24:00.75Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b3/76/6d163cfac87b632216f71879e6b2cf17163f773ff59c00b5ff4900a80fa3/rich-14.3.4-py3-none-any.whl", hash = "sha256:07e7adb4690f68864777b1450859253bed81a99a31ac321ac1817b2313558952", size = 310480, upload-time = "2026-04-11T02:57:47.484Z" },
+    { url = "https://files.pythonhosted.org/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl", hash = "sha256:33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb", size = 310654, upload-time = "2026-04-12T08:24:02.83Z" },
 ]
 
 [[package]]
@@ -2735,6 +2748,9 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+ollama = [
+    { name = "ollama" },
+]
 openai = [
     { name = "aws-bedrock-token-generator" },
     { name = "openai" },
@@ -2742,7 +2758,7 @@ openai = [
 
 [[package]]
 name = "strands-agents-evals"
-version = "1.2.0"
+version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "boto3" },
@@ -2757,14 +2773,14 @@ dependencies = [
     { name = "tenacity" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3e/7e/04abe150aa5edca4494ff40c272daa8889004bcb5bf0078c47287f0824d2/strands_agents_evals-1.2.0.tar.gz", hash = "sha256:a680bb7cbeaac0d072a971b8c25453639f5a67e11a01dcf656ba587c8491e66f", size = 606561, upload-time = "2026-08-21T16:33:13.253Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/62/07/8dc3c59250a1a98113063a42fba789d2b6dbeb79a6a9bcd53eb287665bb3/strands_agents_evals-1.7.0.tar.gz", hash = "sha256:7be9618ef61f2a4863f9a87e5862178a9ce9bd8d4a48e4fe520c75bc8f502a8f", size = 693112, upload-time = "2026-10-21T20:54:17.182Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1d/31/b6a8e08de3895c1bf06d86042086abf4d77f32bb266f6c337ae20d567057/strands_agents_evals-1.2.0-py3-none-any.whl", hash = "sha256:64947b9aba65e256084c5e571a599f7ba0b856ac95f8f15ecd5b5a9af89aee8b", size = 416507, upload-time = "2026-08-21T16:33:11.756Z" },
+    { url = "https://files.pythonhosted.org/packages/76/f0/d52dd67f92c567ca9672f878a38a0381e2ad4b8bde6d6e3def08f184f494/strands_agents_evals-1.7.0-py3-none-any.whl", hash = "sha256:b4f95f2c937c35783e3287459a46ee4477636808e4074d826fd2ecf51e519360", size = 448617, upload-time = "2026-10-21T20:54:15.36Z" },
 ]
 
 [[package]]
 name = "strands-agents-tools"
-version = "0.8.6"
+version = "0.8.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -2785,9 +2801,9 @@ dependencies = [
     { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "watchdog" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bd/fc/63031f0d5483a036eb732ae52624e6429ed1385d9c68515763c323da00fd/strands_agents_tools-0.8.6.tar.gz", hash = "sha256:3cdafd706909be6e8cab5411067cdc5af269bec29f1903788629e3f092d9e8aa", size = 533539, upload-time = "2026-08-07T18:09:03.432Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/0f/442ece9d7203b6e92da7911129c4e5a1a56c26aaae913ebde869d515001b/strands_agents_tools-0.8.10.tar.gz", hash = "sha256:a5146d71f882e8ed0a127b68244e2ea604b99d86289346c83dd98fd1c891d566", size = 547417, upload-time = "2026-10-21T21:14:07.633Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9e/32/36ff3b19528430d68f740bf61d6fe1f4afbf670f69a2ca204ae1f04139e2/strands_agents_tools-0.8.6-py3-none-any.whl", hash = "sha256:ed87ef1c405c635164e7e85e1cb0a1560bd30156b54b3c6cb11574e67d111d5c", size = 338989, upload-time = "2026-08-07T18:09:01.549Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/4a/4bc6b6c10ba2d45ffc4bc2f06f95dd1812ab9e08415229761f5c62ea0db5/strands_agents_tools-0.8.10-py3-none-any.whl", hash = "sha256:175bf7f751b778df7f4a2135458511bd9cb2ea29c2370d7476617792c010bf98", size = 345989, upload-time = "2026-10-21T21:14:05.548Z" },
 ]
 
 [[package]]
